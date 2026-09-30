@@ -1,0 +1,58 @@
+name: VOID Validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "staging/void-*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate catalog invariants
+        run: |
+          python - <<'PY'
+          import json, pathlib, re
+          p = pathlib.Path("VOID/catalog/index.json")
+          data = json.loads(p.read_text(encoding="utf-8"))
+          particles = data["particles"]
+          ids = [x["particle_id"] for x in particles]
+          assert len(ids) == len(set(ids)), "duplicate particle_id"
+          for x in particles:
+              assert x["origin_anchor"] == "NEXUS://0.0.0"
+              h = x.get("content_sha256")
+              if h is not None:
+                  assert re.fullmatch(r"[0-9a-fA-F]{64}", h), x["name"]
+          print(f"VOID catalog valid: {len(particles)} particles")
+          PY
+      - name: Reject obvious committed credentials
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, sys
+          pats = [
+              re.compile(r"gh[pousr]_[A-Za-z0-9_]{20,}"),
+              re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
+              re.compile(r"AKIA[0-9A-Z]{16}"),
+              re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
+          ]
+          bad=[]
+          for f in Path("VOID").rglob("*"):
+              if not f.is_file() or f.stat().st_size > 2_000_000: continue
+              try: t=f.read_text(encoding="utf-8")
+              except Exception: continue
+              if any(p.search(t) for p in pats): bad.append(str(f))
+          if bad:
+              print("credential-pattern candidates:", *bad, sep="\n- ")
+              sys.exit(1)
+          print("No obvious credential patterns found in VOID text tree.")
+          PY
