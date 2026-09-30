@@ -28,6 +28,10 @@
     {
       "id": "signal.publish",
       "mode": "session"
+    },
+    {
+      "id": "signal.poll",
+      "mode": "session"
     }
   ]
 }
