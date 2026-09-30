@@ -1,0 +1,33 @@
+{
+  "schema": "cryptic.actions.v0.1",
+  "actions": [
+    {
+      "id": "system.status",
+      "mode": "read-only"
+    },
+    {
+      "id": "system.atoms",
+      "mode": "read-only"
+    },
+    {
+      "id": "ai.dual",
+      "mode": "inference-only"
+    },
+    {
+      "id": "vector.status",
+      "mode": "read-only"
+    },
+    {
+      "id": "synapse.status",
+      "mode": "read-only"
+    },
+    {
+      "id": "pyghidra.status",
+      "mode": "read-only"
+    },
+    {
+      "id": "signal.publish",
+      "mode": "session"
+    }
+  ]
+}
