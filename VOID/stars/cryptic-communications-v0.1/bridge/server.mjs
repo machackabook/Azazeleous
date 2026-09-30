@@ -30,6 +30,17 @@ async function synapseStatus(){const tok=process.env.SYNAPSE_TOKEN;if(!tok)throw
 async function pyghidraStatus(){if(!PYGHIDRA)return{configured:false};return{configured:true,status:await jfetch(PYGHIDRA+"/status",{},3500)}}
 
 const rooms=new Map();
+function signalPublish(room,message){
+  const clean=String(room||"").replace(/[^A-Za-z0-9._-]/g,"").slice(0,80);
+  if(!clean)throw new Error("room required");
+  const q=rooms.get(clean)||[],item={id:Date.now()+"-"+randomBytes(4).toString("hex"),ts:Date.now(),message};
+  q.push(item); if(q.length>300) q.splice(0,q.length-300); rooms.set(clean,q); return {room:clean,event:item};
+}
+function signalPoll(room,after=0){
+  const clean=String(room||"").replace(/[^A-Za-z0-9._-]/g,"").slice(0,80);
+  if(!clean)throw new Error("room required");
+  return {room:clean,events:(rooms.get(clean)||[]).filter(x=>x.ts>Number(after||0))};
+}
 const server=http.createServer(async(req,res)=>{
  try{
   cors(req,res);if(req.method==="OPTIONS"){res.writeHead(204);return res.end()}
@@ -41,6 +52,8 @@ const server=http.createServer(async(req,res)=>{
   if(id==="synapse.status")return send(req,res,200,await synapseStatus());
   if(id==="pyghidra.status")return send(req,res,200,await pyghidraStatus());
   if(id==="ai.dual"){const p=String(b.payload?.prompt||"").trim();if(!p)return send(req,res,400,{error:"prompt required"});const [o,g]=await Promise.allSettled([ollama(p),gemini(p)]);return send(req,res,200,{mode:"parallel",ollama:o.status==="fulfilled"?o.value:{error:o.reason?.message},gemini:g.status==="fulfilled"?g.value:{error:g.reason?.message}})}
+  if(id==="signal.publish")return send(req,res,201,signalPublish(b.payload?.room,b.payload?.message));
+  if(id==="signal.poll")return send(req,res,200,signalPoll(b.payload?.room,b.payload?.after));
   return send(req,res,501,{error:"action registered but not implemented"});
  }catch(e){return send(req,res,500,{error:e.message})}
 });
