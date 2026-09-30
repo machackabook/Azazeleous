@@ -1,0 +1,14 @@
+{
+  "schema": "void.working-copy.v0.1",
+  "source_file_ref": "file_00000000bb6881f9be06f7d60d62b4d3",
+  "source_name": "Sovereign Notebook.html",
+  "source_mime_type": "text/html",
+  "source_size_bytes": 18961,
+  "origin_anchor": "NEXUS://0.0.0",
+  "state": "IMPORTED_WORKING_COPY",
+  "original_location_policy": "original remains outside Git",
+  "content_sha256": null,
+  "exact_byte_verification": "pending",
+  "promotion_target": "VOID/stars/",
+  "notes": "Textual working copy imported for later formatting, repair, testing and lineage promotion."
+}
