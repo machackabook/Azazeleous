@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VOID // Document Constellation</title>
+<style>
+:root{color-scheme:dark;--bg:#020308;--fg:#d8f7ff;--muted:#718096;--line:#173047;--panel:rgba(3,9,18,.78)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font:13px ui-monospace,SFMono-Regular,Menlo,monospace}
+#scene{position:fixed;inset:0}#hud{position:fixed;left:14px;top:14px;z-index:4;max-width:min(440px,calc(100vw - 28px));background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;backdrop-filter:blur(14px)}
+h1{font-size:13px;margin:0 0 7px;letter-spacing:.18em}.muted{color:var(--muted)}#search{width:100%;margin-top:10px;padding:9px 10px;background:#050914;color:var(--fg);border:1px solid var(--line);border-radius:9px;outline:none}
+#detail{margin-top:10px;max-height:180px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+#stats{position:fixed;right:14px;bottom:14px;z-index:4;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+button{background:#07111e;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer}
+.controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<section id="hud">
+  <h1>VOID // 0.0.0</h1>
+  <div class="muted">Encoded document constellation · circular chronology · click a particle to inspect lineage.</div>
+  <input id="search" type="search" placeholder="Filter filename / class / particle id">
+  <div class="controls"><button id="home">CENTER 0.0.0</button><button id="pause">PAUSE ORBIT</button></div>
+  <div id="detail" class="muted">Select a particle orb.</div>
+</section>
+<div id="stats">loading constellation…</div>
+<script src="../catalog/particles.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  const C = (window.VOID_CATALOG && window.VOID_CATALOG.particles) || [];
+  const host = document.getElementById('scene');
+  const detail = document.getElementById('detail');
+  const stats = document.getElementById('stats');
+  const search = document.getElementById('search');
+  if (!window.THREE) { stats.textContent = 'Three.js unavailable'; return; }
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x020308, 0.006);
+  const camera = new THREE.PerspectiveCamera(58, innerWidth/innerHeight, .1, 3000);
+  camera.position.set(0,26,105);
+  const renderer = new THREE.WebGLRenderer({antialias:true,alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  host.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0x6ecfff,.75));
+  const key = new THREE.PointLight(0xffffff,1.1,400); key.position.set(0,40,30); scene.add(key);
+
+  const origin = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(5.3,3),
+    new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.9})
+  );
+  origin.userData = {origin:true,name:'NEXUS://0.0.0'};
+  scene.add(origin);
+
+  const orbitGroup = new THREE.Group(); scene.add(orbitGroup);
+  const linePts = [];
+  const meshes = [];
+
+  function colorFor(p){
+    if(p.runtime_class==='html-star') return 0x35e6ff;
+    if(p.runtime_class==='code-star') return 0xb389ff;
+    if(p.runtime_class==='text-star') return 0x64f58d;
+    if(p.runtime_class==='document-orb') return 0xffc857;
+    if(p.runtime_class==='archive-nebula') return 0xff6b8a;
+    return 0x8aa0b5;
+  }
+
+  C.forEach((p,i)=>{
+    const a = p.orb.theta + p.orb.ring * .23;
+    const r = p.orb.radius + Math.sin(i*.77)*2.2;
+    const y = (i - C.length/2) * .72;
+    const x = Math.cos(a)*r, z = Math.sin(a)*r;
+    const size = Math.max(.7, Math.min(2.7, .8 + Math.log10((p.size_bytes||3000)+10)*.26));
+    const mesh = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(size,2),
+      new THREE.MeshStandardMaterial({color:colorFor(p),emissive:colorFor(p),emissiveIntensity:.33,roughness:.35,metalness:.18,transparent:true,opacity:.91})
+    );
+    mesh.position.set(x,y,z);
+    mesh.userData = p;
+    orbitGroup.add(mesh); meshes.push(mesh); linePts.push(mesh.position.clone());
+  });
+
+  if(linePts.length>1){
+    const geom = new THREE.BufferGeometry().setFromPoints(linePts);
+    const line = new THREE.Line(geom,new THREE.LineBasicMaterial({color:0x23465f,transparent:true,opacity:.42}));
+    orbitGroup.add(line);
+  }
+
+  const ray = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  function inspect(p){
+    detail.textContent =
+      p.name + '\n' +
+      p.particle_id + '\n' +
+      p.runtime_class + ' · ' + (p.mime_type||'unknown') + '\n' +
+      'state: ' + p.code_state + '\n' +
+      'sha256: ' + (p.content_sha256 || 'PENDING EXACT-BYTE VERIFICATION');
+  }
+  renderer.domElement.addEventListener('pointerdown', e=>{
+    const rect=renderer.domElement.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    ray.setFromCamera(mouse,camera);
+    const hit=ray.intersectObjects(meshes,false)[0];
+    if(hit) inspect(hit.object.userData);
+  });
+
+  let paused=false, targetRot=0, dragging=false,lastX=0;
+  renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX});
+  addEventListener('pointerup',()=>dragging=false);
+  addEventListener('pointermove',e=>{if(dragging){targetRot+=(e.clientX-lastX)*.005;lastX=e.clientX}});
+  addEventListener('wheel',e=>{camera.position.z=Math.max(22,Math.min(240,camera.position.z+e.deltaY*.06))},{passive:true});
+
+  document.getElementById('home').onclick=()=>{camera.position.set(0,26,105);targetRot=0};
+  document.getElementById('pause').onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?'RESUME ORBIT':'PAUSE ORBIT'};
+  search.addEventListener('input',()=>{
+    const q=search.value.trim().toLowerCase();
+    meshes.forEach(m=>{
+      const p=m.userData;
+      const hay=(p.name+' '+p.runtime_class+' '+p.particle_id).toLowerCase();
+      m.visible=!q||hay.includes(q);
+    });
+  });
+
+  function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+  addEventListener('resize',resize);
+
+  stats.textContent = C.length + ' particle orbs · origin NEXUS://0.0.0';
+  function loop(){
+    requestAnimationFrame(loop);
+    if(!paused) targetRot += .0008;
+    orbitGroup.rotation.y += (targetRot-orbitGroup.rotation.y)*.035;
+    origin.rotation.x += .0015; origin.rotation.y -= .002;
+    renderer.render(scene,camera);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>

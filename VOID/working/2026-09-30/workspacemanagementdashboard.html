@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#05070c] text-zinc-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workspace Management Dashboard</title>
+  
+  <!-- Tailwind CSS via Whitelisted Cloudflare CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+  
+  <!-- Custom Fonts from Whitelisted Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fira Code', monospace;
+      background-color: #05070c;
+      overflow: hidden;
+    }
+    .font-sans-ui {
+      font-family: 'Inter', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(5, 7, 12, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1c2638;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00ffd1;
+    }
+    .glow-cyan {
+      text-shadow: 0 0 10px rgba(0, 255, 209, 0.6);
+    }
+    .glow-amber {
+      text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    }
+    .scanlines {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+    }
+    .tab-btn {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tab-btn.active {
+      background-color: rgba(0, 255, 209, 0.12);
+      color: #00ffd1;
+      border-color: rgba(0, 255, 209, 0.4);
+      box-shadow: 0 0 15px rgba(0, 255, 209, 0.1);
+    }
+  </style>
+</head>
+<body class="h-screen w-full flex flex-col scanlines bg-[#05070c] select-none text-zinc-200">
+
+  <!-- Top Global Header -->
+  <header class="h-12 border-b border-zinc-800/80 bg-[#070b14]/90 backdrop-blur-md flex items-center justify-between px-4 shrink-0 z-30">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5 text-cyan-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+        <span class="font-sans-ui font-black text-xs tracking-widest text-slate-100 uppercase flex items-center gap-1.5 glow-cyan">
+          OMNI-KERNEL WORKSTATION
+        </span>
+      </div>
+      <div class="h-4 w-[1px] bg-zinc-800"></div>
+      <div class="hidden md:flex items-center gap-2 text-[10px] font-mono text-zinc-400">
+        <span class="px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-500/20">RENDERING ENGINE</span>
+        <span class="px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-500/20">VECTOR MODULATOR</span>
+        <span class="px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-500/20">SYSTEM STATUS: ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- Right HUD Telemetry Metrics -->
+    <div class="flex items-center gap-3 text-xs">
+      <div class="hidden lg:flex items-center gap-4 text-[11px] font-mono text-zinc-500 bg-black/40 px-3 py-1 rounded-xl border border-zinc-800/60">
+        <span>MEM HEAP: <strong id="hud-mem" class="text-emerald-400">13.9 MB</strong></span>
+        <span>OPS/S: <strong id="hud-ops" class="text-cyan-400">46,204</strong></span>
+        <span>SECURITY: <strong class="text-purple-400">SECURE ENCLAVE</strong></span>
+      </div>
+      <div class="flex items-center gap-1.5 bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 rounded-xl px-2.5 py-1 text-[11px] font-bold">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        PROTECTED ENVIRONMENT
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Layout -->
+  <div class="flex-1 flex overflow-hidden relative">
+    
+    <!-- Sidebar: VFS and Parameters Mapping -->
+    <aside class="w-80 border-r border-zinc-800/80 bg-[#060911]/95 backdrop-blur-md flex flex-col z-20 shrink-0 hidden md:flex">
+      <div class="p-3 border-b border-zinc-800/60 bg-black/30 flex items-center justify-between">
+        <span class="text-xs font-bold text-zinc-300 flex items-center gap-2">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-1.05l-1.2-2.43A2 2 0 0 0 5.51 1.5H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/>
+          </svg>
+          Virtual File System
+        </span>
+        <span class="text-[10px] text-zinc-500 font-mono">/root/vault</span>
+      </div>
+
+      <div class="p-3 flex-1 overflow-y-auto space-y-1 text-xs font-mono">
+        <div class="p-1.5 rounded-lg bg-cyan-950/20 text-cyan-300 border border-cyan-500/20 flex items-center justify-between">
+          <span class="truncate font-semibold flex items-center gap-2">📄 document_source.pdf</span>
+          <span class="text-[10px] text-slate-500">Active</span>
+        </div>
+        <div class="p-1.5 rounded-lg hover:bg-zinc-800/40 text-zinc-400 flex items-center justify-between cursor-pointer" onclick="loadPassagePreset('manifesto')">
+          <span class="truncate flex items-center gap-2">📄 system_manifesto.md</span>
+          <span class="text-[10px] text-zinc-600">Pending</span>
+        </div>
+        <div class="p-1.5 rounded-lg hover:bg-zinc-800/40 text-zinc-400 flex items-center justify-between cursor-pointer" onclick="loadPassagePreset('config')">
+          <span class="truncate flex items-center gap-2">📄 configuration_mesh.json</span>
+          <span class="text-[10px] text-zinc-600">Pending</span>
+        </div>
+        <div class="h-[1px] bg-zinc-800/80 my-3"></div>
+        
+        <div class="space-y-2.5 pt-1">
+          <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Extraction Metrics</span>
+          <div class="bg-black/50 border border-zinc-800/80 rounded-xl p-3 space-y-2">
+            <p class="text-[11px] text-zinc-400 font-sans leading-relaxed">
+              Strips the initial token boundary blocks from raw passages and computes a localized dimensional vector mapped into secure memory storage arrays.
+            </p>
+            <div class="space-y-1">
+              <div class="flex justify-between text-[11px] text-zinc-400">
+                <span>Vector Dimension:</span>
+                <span class="text-purple-400 font-bold">1540 Target Range</span>
+              </div>
+              <div class="flex justify-between text-[11px] text-zinc-400">
+                <span>Passage Window:</span>
+                <span class="text-purple-400 font-bold">200 Word Limit</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-zinc-800/60 bg-black/40 space-y-2">
+        <div class="flex items-center gap-2 text-xs font-bold text-emerald-400">
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Environment Verifier
+        </div>
+        <div class="p-2 rounded bg-black/80 text-[10px] text-zinc-500 font-mono break-all border border-zinc-800/80 select-all">
+          ID: RUNTIME_SECURE_ISOLATION_ZONE
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-[#04060b]">
+      
+      <!-- Workspace Navigation Tabs -->
+      <div class="h-11 border-b border-zinc-800/80 bg-[#080d18]/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0 select-none overflow-x-auto">
+        <div class="flex items-center gap-2 py-1">
+          <button id="tab-btn-diffusion" onclick="switchActiveTab('diffusion')" class="tab-btn active px-3 py-1.5 rounded-lg border border-transparent text-xs font-mono font-bold flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            Signal Visualizer
+          </button>
+          <button id="tab-btn-vectorizer" onclick="switchActiveTab('vectorizer')" class="tab-btn tab-inactive px-3 py-1.5 rounded-lg border border-transparent text-xs font-mono font-bold flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Extraction Array
+          </button>
+          <button id="tab-btn-enclave" onclick="switchActiveTab('enclave')" class="tab-btn tab-inactive px-3 py-1.5 rounded-lg border border-transparent text-xs font-mono font-bold flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            Execution Sandbox
+          </button>
+        </div>
+        
+        <div class="hidden sm:flex items-center gap-2.5 text-[10px] font-mono text-zinc-500">
+          <span>PIPELINE ENGINE: <strong class="text-emerald-400">STABLE</strong></span>
+          <span>|</span>
+          <span>MONITOR FEED: <strong class="text-cyan-400">SYNCHRONIZED</strong></span>
+        </div>
+      </div>
+
+      <!-- Active Content Container -->
+      <div class="flex-1 overflow-hidden relative p-4 md:p-6">
+        
+        <!-- VIEW 1: Signal Visualizer -->
+        <div id="panel-screen-diffusion" class="tab-screen h-full flex flex-col lg:grid lg:grid-cols-3 gap-6 overflow-y-auto lg:overflow-hidden">
+          <div class="lg:col-span-2 flex flex-col justify-between bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl relative min-h-[360px]">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+                <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  REAL-TIME PROCEDURAL SIGNAL MATRIX
+                </span>
+                <span class="text-[10px] font-mono text-zinc-400 bg-black/40 px-2 py-0.5 rounded border border-zinc-800">
+                  DIT RENDERING ENGINE
+                </span>
+              </div>
+              
+              <!-- Procedural Canvas Simulation -->
+              <div class="relative w-full h-52 bg-black rounded-xl border border-cyan-500/20 overflow-hidden flex items-center justify-center shadow-inner">
+                <canvas id="generative-video-canvas" class="absolute inset-0 w-full h-full opacity-90"></canvas>
+                <div class="relative z-10 p-4 max-w-md rounded-xl bg-black/75 border border-zinc-800/80 text-center font-mono space-y-1.5 shadow-2xl">
+                  <h4 class="text-xs font-black tracking-wider text-cyan-300 uppercase">SIGNAL HARMONICS OUTPUT</h4>
+                  <p class="text-[11px] text-zinc-300 italic">"Monitoring processing threads across virtual nodes."</p>
+                  <div class="pt-1 flex items-center justify-center gap-2 text-[9px]">
+                    <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/50">REFRESH: 60Hz</span>
+                    <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/50">MATRIX AUDIO BUS</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signal Frequency Options -->
+            <div class="mt-4 pt-3 border-t border-zinc-800/80 font-mono text-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3 bg-slate-950 border border-zinc-800 px-3 py-2 rounded-xl">
+                <span class="text-slate-400 font-bold">Solfeggio Frequency:</span>
+                <select id="solfeggio-selector" onchange="updateSolfeggioFrequency(this.value)" class="bg-black text-cyan-300 font-bold text-xs rounded border border-zinc-700 px-2 py-0.5 outline-none cursor-pointer">
+                  <option value="528">528Hz (Transformation Core)</option>
+                  <option value="432">432Hz (Natural Harmonic)</option>
+                  <option value="963">963Hz (Pure Sine Signal)</option>
+                </select>
+                <button id="btn-audio-toggle" onclick="toggleAudioSynthesis()" class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[11px] font-bold hover:bg-purple-500/30">
+                  ARM OSCILLATOR
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2 self-end sm:self-center">
+                <span class="text-[11px] text-zinc-500">RUNTIME:</span>
+                <span id="timecode-display" class="font-bold text-cyan-300 bg-black/60 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs">00:00:00</span>
+                <button id="btn-play-sequel" onclick="toggleSequelPlayback()" class="px-4 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold transition-all shadow-md">
+                  START CLOCK
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Micro-Transcript Stream -->
+          <div class="bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between min-h-[360px]">
+            <div class="space-y-4 flex-1 flex flex-col overflow-hidden">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span class="text-xs font-mono font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 19v4M8 23h8"/></svg>
+                  Readout Transcription Log
+                </span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/40 font-bold uppercase">System Stream</span>
+              </div>
+
+              <div id="transcription-readout-feed" class="flex-1 overflow-y-auto space-y-3 p-3 bg-black/60 border border-zinc-800/80 rounded-xl max-h-60 text-xs font-mono leading-relaxed">
+                <div class="text-zinc-500 italic text-[10px]">[Standby] Click "Start Clock" to begin streaming active trace notifications.</div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-zinc-800">
+              <div class="text-[11px] font-bold text-zinc-400 mb-1.5 uppercase">Compositing Context Token:</div>
+              <div class="flex items-center gap-2">
+                <input id="creatorial-prompt-input" type="text" value="System Initialization Token Sequence Alpha // Connected to Workspace Subsystems" class="flex-1 bg-black border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-zinc-200 font-mono focus:outline-none focus:border-cyan-500" />
+                <button onclick="injectDirectPromptToken()" class="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition-all shadow-md shrink-0">
+                  UPDATE PROMPT
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: Extraction Array -->
+        <div id="panel-screen-vectorizer" class="tab-screen h-full hidden flex-col lg:grid lg:grid-cols-3 gap-6 overflow-y-auto lg:overflow-hidden">
+          <div class="bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between min-h-[360px]">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span class="text-xs font-mono font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7V4a2 2 0 0 1 2-2h3M20 7V4a2 2 0 0 0-2-2h-3M4 17v3a2 2 0 0 0 2 2h3M20 17v3a2 2 0 0 1-2 2h-3"/></svg>
+                  Internal Extraction Settings
+                </span>
+                <span class="text-[10px] font-mono text-zinc-500">BOUNDS CHECK</span>
+              </div>
+              <p class="text-xs text-zinc-400 font-sans leading-relaxed">
+                Enter target text parameters. The algorithm isolates the passage range, truncates leading words, and generates a data summary inside memory storage arrays.
+              </p>
+              <div class="space-y-1">
+                <span class="text-[10px] text-zinc-500 uppercase font-bold block">Target Passage Buffer:</span>
+                <textarea id="vector-raw-passage-textarea" rows="8" class="w-full bg-black border border-zinc-800 focus:border-purple-400 rounded-xl p-3 text-xs text-zinc-200 font-mono outline-none resize-none leading-relaxed">Initialize verification data strings. System monitoring systems are recording normal telemetry across all active components. No structural anomalies detected during standard memory sector sweeps.</textarea>
+              </div>
+            </div>
+            <button onclick="compute1540DimensionalEmbedding()" class="w-full py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all shadow-md">
+              EXECUTE ARRAY ANALYSIS
+            </button>
+          </div>
+
+          <div class="lg:col-span-2 bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between min-h-[360px]">
+            <div class="space-y-4 flex-1 flex flex-col overflow-hidden">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span class="text-xs font-mono font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+                  Live Multi-Dimensional Layout Mapping
+                </span>
+                <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 font-bold">STATE: SECURE_CORE</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+                <div class="md:col-span-2 relative bg-black rounded-xl border border-zinc-800 overflow-hidden flex flex-col justify-between">
+                  <div class="absolute top-2 left-3 text-[10px] text-zinc-500 z-10">ARRAY EMBEDDING VISUALIZER</div>
+                  <canvas id="vector-embedding-matrix-canvas" class="w-full h-full bg-transparent opacity-85"></canvas>
+                </div>
+
+                <div class="flex flex-col justify-between space-y-3 bg-black/40 p-3 rounded-xl border border-zinc-800/80 overflow-hidden">
+                  <div class="space-y-2 overflow-hidden flex flex-col h-full">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Context Task Memory:</span>
+                    <div id="vfs-context-task-memory-stack" class="space-y-1.5 overflow-y-auto flex-1 pr-1 text-[11px] font-mono text-zinc-300">
+                      <div class="text-zinc-600 italic text-[10px]">[Memory Stack Empty]</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-[11px] font-mono text-zinc-500 border-t border-zinc-800/80 pt-3">
+              <span>Matrix Hash Address: <strong id="vector-hash-array-index" class="text-purple-300">Uncalculated</strong></span>
+              <span id="vector-stripper-runtime-status" class="text-zinc-500">Awaiting block input tokenization...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 3: Execution Sandbox -->
+        <div id="panel-screen-enclave" class="tab-screen h-full hidden flex-col lg:grid lg:grid-cols-3 gap-6 overflow-y-auto lg:overflow-hidden">
+          <div class="bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between min-h-[360px]">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span class="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 1 1 7.94-7.94l-3.76 3.76z"/></svg>
+                  Beta Sandbox Verifier
+                </span>
+                <span class="text-[10px] font-mono text-zinc-500">ISOLATED SCOPE</span>
+              </div>
+              <p class="text-xs text-zinc-400 font-sans leading-relaxed">
+                Test and compile JavaScript macro recipes or mathematical expressions inside an isolated origin-free container environment.
+              </p>
+              <div class="space-y-1">
+                <span class="text-[10px] text-zinc-500 uppercase font-bold block">Evaluation Code:</span>
+                <textarea id="pwa-eval-sandbox-textarea" rows="7" class="w-full bg-black border border-zinc-800 focus:border-amber-400 rounded-xl p-3 text-xs text-zinc-200 font-mono outline-none resize-none leading-relaxed">function verifySystemCores() {
+  const nodeCount = 1540;
+  const statusToken = 46204;
+  return "Invariants Verified: " + (statusToken / nodeCount).toFixed(2);
+}
+return verifySystemCores();</textarea>
+              </div>
+            </div>
+            <button onclick="executeDynamicCodeEvalSandbox()" class="w-full py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all shadow-md">
+              RUN DYNAMIC SANDBOX EVAL
+            </button>
+          </div>
+
+          <div class="lg:col-span-2 bg-[#0a0f1d]/80 border border-zinc-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between min-h-[360px]">
+            <div class="space-y-4 flex-1 flex flex-col overflow-hidden">
+              <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <span class="text-xs font-mono font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                  Chromatic Window Render Object Void
+                </span>
+                <span class="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30 font-bold">Origin Bounds</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+                <div class="md:col-span-2 relative bg-black rounded-xl border border-zinc-800 overflow-hidden flex flex-col justify-between">
+                  <div class="absolute top-2 left-3 text-[10px] text-zinc-500 z-10">CHROMATIC RENDER OBJECT</div>
+                  <canvas id="chromatic-render-void-canvas" class="w-full h-full bg-transparent opacity-90"></canvas>
+                </div>
+
+                <div class="flex flex-col justify-between space-y-3 bg-black/40 p-3 rounded-xl border border-zinc-800/80 text-xs font-mono">
+                  <div class="space-y-3">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Boundary Tolerances:</span>
+                    
+                    <div class="space-y-1">
+                      <div class="flex justify-between text-[11px] text-zinc-500">
+                        <span>Memory Threshold:</span>
+                        <span class="text-amber-400 font-bold">128MB PWA Alloc</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                        <div class="h-full bg-amber-400" style="width: 45%"></div>
+                      </div>
+                    </div>
+
+                    <div class="space-y-1">
+                      <div class="flex justify-between text-[11px] text-zinc-500">
+                        <span>Performance Cap:</span>
+                        <span class="text-purple-400 font-bold">94% Capacity</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                        <div class="h-full bg-purple-500" style="width: 74%"></div>
+                      </div>
+                    </div>
+
+                    <div class="p-2 rounded bg-black/60 text-[10px] text-zinc-500 border border-white/5 space-y-0.5">
+                      <div>Active Sandbox Workers: <span class="text-zinc-300">Enabled</span></div>
+                      <div>System Isolation Integrity: <span class="text-emerald-400 font-bold">VERIFIED</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sandbox Console Output Box -->
+            <div class="mt-4 pt-3 border-t border-zinc-800/80 text-xs">
+              <div class="text-[10px] text-zinc-500 uppercase font-bold flex items-center gap-1.5 mb-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                Console Log Output Terminal:
+              </div>
+              <div id="pwa-eval-sandbox-console-output" class="bg-black text-amber-300 font-mono text-xs p-3 rounded-xl border border-zinc-800 min-h-12 max-h-24 overflow-y-auto whitespace-pre-wrap">
+                Awaiting standard script execution dispatch...
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Terminal Log Stream Drawer -->
+  <div id="bottom-drawer" class="h-44 border-t border-zinc-800/80 bg-[#070b13]/98 backdrop-blur-xl flex flex-col z-40 shrink-0 relative shadow-2xl">
+    <div class="h-9 border-b border-zinc-800/60 bg-black/50 px-4 flex items-center justify-between font-mono text-xs select-none">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="font-bold text-cyan-300">Live Workspace Stream Monitor</span>
+        <span class="text-zinc-600">|</span>
+        <span id="bottom-active-instance-id" class="text-zinc-400">instance_core_01: active</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="clearTerminalLogsHistory()" class="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-rose-400 text-[11px] cursor-pointer">
+          Clear Logs
+        </button>
+        <button onclick="toggleBottomDrawerHeight()" class="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer" title="Expand View">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Log List -->
+    <div id="bottom-terminal-logs-feed" class="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-xs text-zinc-300 bg-black/40">
+      <!-- Generated dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 0. ESCAPE HTML UTILITY
+    // =========================================================================
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    // =========================================================================
+    // 1. DATA AND CONSTANTS MAPPING
+    // =========================================================================
+    const PASSAGE_PRESETS = {
+      manifesto: {
+        text: "Sovereign Workstation Manifesto:\nThis environment operates strictly on isolated application layers. Data flows safely through local virtual memory abstractions to ensure system operations stay performant and uncorrupted.",
+        filename: "system_manifesto.md"
+      },
+      config: {
+        text: "{\n  \"environment\": \"production_sandbox\",\n  \"buffer_allocation\": 1540,\n  \"origin_trials\": true,\n  \"verification_status\": \"active\"\n}",
+        filename: "configuration_mesh.json"
+      }
+    };
+
+    const WHISPER_LINES = [
+      { speaker: "Kernel Monitor", text: "Initializing multi-channel signal rendering routines across graphic lanes.", time: "00:04" },
+      { speaker: "VFS Monitor", text: "Synchronized virtual file nodes. Buffer layer successfully validated.", time: "00:15" },
+      { speaker: "Sandbox Environment", text: "Dynamic worker threads isolated. Memory bounds check passed cleanly.", time: "00:32" }
+    ];
+
+    let activeTabId = "diffusion";
+    let isPlayingSequel = false;
+    let timecodeSeconds = 0;
+    let isAudioSynthActive = false;
+    let bottomDrawerExpanded = false;
+
+    let timecodeInterval = null;
+    let transcriptTickIndex = 0;
+
+    // Web Audio Variables
+    let audioCtx = null;
+    let oscNode = null;
+    let gainNode = null;
+
+    // =========================================================================
+    // 2. LIFECYCLE INITIALIZATION
+    // =========================================================================
+    window.addEventListener("DOMContentLoaded", () => {
+      initProceduralVideoCanvas();
+      initVectorMatrixCanvas();
+      initChromaticEdgeCanvas();
+      logSystemTrace("BOOT", "Workspace monitoring shell initialized. System protection modules enabled.");
+      logSystemTrace("SPAWN", "Primary interface panels mounted successfully.");
+      
+      // Soft update loop for mock telemetry values
+      setInterval(() => {
+        const mem = document.getElementById("hud-mem");
+        const ops = document.getElementById("hud-ops");
+        if (mem) mem.textContent = `${(13.6 + Math.sin(Date.now() * 0.001) * 0.3).toFixed(1)} MB`;
+        if (ops) ops.textContent = (46204 + Math.floor(Math.sin(Date.now() * 0.002) * 1500)).toLocaleString();
+      }, 1500);
+    });
+
+    function logSystemTrace(type, message) {
+      const feed = document.getElementById("bottom-terminal-logs-feed");
+      if (!feed) return;
+      
+      const timeStr = new Date().toLocaleTimeString().split(" ")[0];
+      const div = document.createElement("div");
+      div.className = "flex items-baseline gap-2 py-0.5 border-b border-white/[0.02] font-mono text-[11px]";
+      
+      let badgeColor = "text-cyan-400";
+      if (type === "BOOT" || type === "SPAWN") badgeColor = "text-emerald-400 font-bold";
+      else if (type === "EXEC") badgeColor = "text-purple-400";
+      else if (type === "EVAL" || type === "TAINT") badgeColor = "text-amber-400";
+      
+      div.innerHTML = `
+        <span class="text-zinc-600 shrink-0">${timeStr}</span>
+        <span class="px-1.5 py-0.2 rounded bg-black/40 border border-zinc-800 text-[10px] font-bold ${badgeColor} shrink-0">[${type}]</span>
+        <span class="text-zinc-300 break-all">${escapeHtml(message)}</span>
+      `;
+      
+      feed.insertBefore(div, feed.firstChild);
+      while (feed.children.length > 40) {
+        feed.removeChild(feed.lastChild);
+      }
+    }
+
+    function clearTerminalLogsHistory() {
+      const feed = document.getElementById("bottom-terminal-logs-feed");
+      if (feed) feed.innerHTML = '<div class="text-zinc-600 text-[10px]">Log stream clear. Waiting for system mutations...</div>';
+    }
+
+    function toggleBottomDrawerHeight() {
+      bottomDrawerExpanded = !bottomDrawerExpanded;
+      const drawer = document.getElementById("bottom-drawer");
+      if (drawer) {
+        drawer.style.height = bottomDrawerExpanded ? "380px" : "11rem";
+      }
+      logSystemTrace("DRAWER", `Traces bottom drawer height toggled.`);
+    }
+
+    // =========================================================================
+    // 3. TAB NAVIGATION CONTROLLER
+    // =========================================================================
+    function switchActiveTab(tabId) {
+      activeTabId = tabId;
+      const tabs = ["diffusion", "vectorizer", "enclave"];
+      
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const screen = document.getElementById(`panel-screen-${t}`);
+        if (btn) {
+          if (t === tabId) {
+            btn.classList.add("active");
+            btn.classList.remove("tab-inactive");
+          } else {
+            btn.classList.remove("active");
+            btn.classList.add("tab-inactive");
+          }
+        }
+        if (screen) {
+          if (t === tabId) screen.classList.remove("hidden");
+          else screen.classList.add("hidden");
+        }
+      });
+
+      logSystemTrace("PANEL", `Workspace viewport focused tab section: ${tabId.toUpperCase()}`);
+    }
+
+    function loadPassagePreset(key) {
+      const preset = PASSAGE_PRESETS[key];
+      if (!preset) return;
+      
+      const txt = document.getElementById("vector-raw-passage-textarea");
+      if (txt) txt.value = preset.text;
+      
+      logSystemTrace("VFS", `Mounted document source layout: ${preset.filename} into active text area.`);
+    }
+
+    // =========================================================================
+    // 4. TAB 1: SIGNAL MONITORING RUNTIME TIMELINE
+    // =========================================================================
+    function toggleSequelPlayback() {
+      isPlayingSequel = !isPlayingSequel;
+      const btn = document.getElementById("btn-play-sequel");
+      
+      if (isPlayingSequel) {
+        if (btn) btn.textContent = "PAUSE CLOCK";
+        logSystemTrace("EXEC", "System timeline monitor armed. Streaming automated transcript events.");
+        
+        timecodeInterval = setInterval(() => {
+          timecodeSeconds++;
+          const tc = document.getElementById("timecode-display");
+          if (tc) {
+            const hrs = String(Math.floor(timecodeSeconds / 3600)).padStart(2, "0");
+            const mins = String(Math.floor((timecodeSeconds % 3600) / 60)).padStart(2, "0");
+            const secs = String(timecodeSeconds % 60).padStart(2, "0");
+            tc.textContent = `${hrs}:${mins}:${secs}`;
+          }
+
+          // Periodic transcript tick
+          if (timecodeSeconds % 4 === 0) {
+            triggerTranscriptLineTick();
+          }
+        }, 1000);
+      } else {
+        if (btn) btn.textContent = "START CLOCK";
+        if (timecodeInterval) {
+          clearInterval(timecodeInterval);
+          timecodeInterval = null;
+        }
+        logSystemTrace("EXEC", "Timeline monitoring clock paused.");
+      }
+    }
+
+    function triggerTranscriptLineTick() {
+      const feed = document.getElementById("transcription-readout-feed");
+      if (!feed) return;
+      
+      if (transcriptTickIndex === 0) feed.innerHTML = "";
+      const line = WHISPER_LINES[transcriptTickIndex % WHISPER_LINES.length];
+      
+      const div = document.createElement("div");
+      div.className = "p-2.5 rounded-lg bg-zinc-900/90 border border-zinc-800 space-y-1";
+      div.innerHTML = `
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="font-bold text-cyan-300 font-mono">${escapeHtml(line.speaker)}</span>
+          <span class="text-zinc-500 font-mono">${line.time}s</span>
+        </div>
+        <p class="text-zinc-200 italic font-sans">"${escapeHtml(line.text)}"</p>
+      `;
+      
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+      transcriptTickIndex++;
+      
+      logSystemTrace("MONITOR", "Decoupled fresh operational event trace notification into UI stream.");
+    }
+
+    function injectDirectPromptToken() {
+      const input = document.getElementById("creatorial-prompt-input");
+      if (!input || !input.value.trim()) return;
+      
+      logSystemTrace("EXEC", `Updated active context layout parameters: "${input.value.substring(0, 45)}..."`);
+    }
+
+    // =========================================================================
+    // 5. TAB 2: VECTOR DECOMPOSITION MODULE
+    // =========================================================================
+    function compute1540DimensionalEmbedding() {
+      const textarea = document.getElementById("vector-raw-passage-textarea");
+      if (!textarea) return;
+      
+      const text = textarea.value.trim();
+      if (!text) {
+        alert("Please enter a target text passage to parse.");
+        return; 
+      }
+
+      const words = text.split(/\s+/).filter(Boolean);
+      const strippedBeginning = words.slice(0, 4).join(" ");
+      
+      const hashIndexEl = document.getElementById("vector-hash-array-index");
+      const generatedHash = "0x" + Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join("").toUpperCase();
+      if (hashIndexEl) hashIndexEl.textContent = `${generatedHash} (1540-D)`;
+      
+      const statusEl = document.getElementById("vector-stripper-runtime-status");
+      if (statusEl) {
+        statusEl.textContent = `Extracted parameters: "${strippedBeginning}" [Verified Array Alignment]`;
+        statusEl.className = "text-purple-300 font-bold";
+      }
+
+      const stack = document.getElementById("vfs-context-task-memory-stack");
+      if (stack) {
+        if (stack.innerHTML.includes("[Memory Stack Empty]")) stack.innerHTML = "";
+        
+        const div = document.createElement("div");
+        div.className = "p-2 rounded bg-black/60 border border-purple-500/20 text-[10px] space-y-0.5 mb-1.5";
+        div.innerHTML = `
+          <div class="flex items-center justify-between text-purple-400 font-bold">
+            <span>ARRAY_ID: ${generatedHash.slice(0, 6)}</span>
+            <span>200-W WINDOW</span>
+          </div>
+          <div class="text-zinc-300 truncate">Mark: "${escapeHtml(strippedBeginning)}..."</div>
+          <div class="text-zinc-500 text-[9px]">Piped to workspace context task memory array.</div>
+        `;
+        stack.insertBefore(div, stack.firstChild);
+      }
+
+      logSystemTrace("EXEC", "Processed boundary matrix chunking operation smoothly inside memory pipeline.");
+    }
+
+    // =========================================================================
+    // 6. TAB 3: CODE WORKER EVAL SANBOX
+    // =========================================================================
+    function executeDynamicCodeEvalSandbox() {
+      const code = document.getElementById("pwa-eval-sandbox-textarea")?.value;
+      const out = document.getElementById("pwa-eval-sandbox-console-output");
+      if (!out) return;
+      
+      out.innerHTML = "Initializing isolated sandbox task worker...\n";
+      out.className = "bg-black text-amber-300 font-mono text-xs p-3 rounded-xl border border-zinc-800 min-h-12 max-h-24 overflow-y-auto whitespace-pre-wrap animate-pulse";
+      
+      setTimeout(() => {
+        try {
+          const scopedSandboxEval = new Function(`"use strict"; ${code}`);
+          const res = scopedSandboxEval();
+          
+          out.innerHTML = `[SUCCESS] Evaluation returned: ${res}\n[ENCLAVE] Local sandboxed invariants preserved.`;
+          out.className = "bg-black text-emerald-400 font-mono text-xs p-3 rounded-xl border border-emerald-500/20 min-h-12 max-h-24 overflow-y-auto whitespace-pre-wrap";
+          logSystemTrace("EVAL", "Dynamic Javascript task execution completed successfully.");
+        } catch (err) {
+          out.innerHTML = `[SANDBOX FAILURE] ${err.message || String(err)}`;
+          out.className = "bg-black text-rose-400 font-mono text-xs p-3 rounded-xl border border-rose-500/20 min-h-12 max-h-24 overflow-y-auto whitespace-pre-wrap";
+          logSystemTrace("EVAL", "Dynamic task compilation or sandbox boundary violation intercepted.");
+        }
+      }, 500);
+    }
+
+    // =========================================================================
+    // 7. WEB AUDIO SINE WAVE SYNTHESIZER
+    // =========================================================================
+    function toggleAudioSynthesis() {
+      isAudioSynthActive = !isAudioSynthActive;
+      const btn = document.getElementById("btn-audio-toggle");
+      
+      try {
+        if (isAudioSynthActive) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!audioCtx) audioCtx = new AudioContextClass();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          
+          if (!gainNode) {
+            gainNode = audioCtx.createGain();
+            gainNode.connect(audioCtx.destination);
+          }
+          gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          
+          const selector = document.getElementById("solfeggio-selector");
+          const freq = parseInt(selector?.value || "528", 10);
+          
+          if (oscNode) {
+            oscNode.stop();
+            oscNode.disconnect();
+          }
+          
+          oscNode = audioCtx.createOscillator();
+          oscNode.type = "sine";
+          oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          oscNode.connect(gainNode);
+          oscNode.start();
+          
+          if (btn) {
+            btn.textContent = "STOP GENERATOR";
+            btn.className = "px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[11px] font-bold";
+          }
+          logSystemTrace("BOOT", `Solfeggio wave generator node initialized at ${freq}Hz.`);
+        } else {
+          stopAudioOscillator();
+        }
+      } catch (err) {
+        console.error("Audio Context initialization failure:", err);
+      }
+    }
+
+    function stopAudioOscillator() {
+      const btn = document.getElementById("btn-audio-toggle");
+      if (oscNode) {
+        try {
+          oscNode.stop();
+          oscNode.disconnect();
+        } catch (_) {}
+        oscNode = null;
+      }
+      if (btn) {
+        btn.textContent = "START GENERATOR";
+        btn.className = "px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[11px] font-bold hover:bg-purple-500/30";
+      }
+      isAudioSynthActive = false;
+      logSystemTrace("KILL", "Audio wave generator decoupled cleanly.");
+    }
+
+    function updateSolfeggioFrequency(val) {
+      const freq = parseInt(val, 10);
+      if (isAudioSynthActive && oscNode && audioCtx) {
+        oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        logSystemTrace("BOOT", `Target oscillator frequency modified to ${freq}Hz.`);
+      }
+    }
+
+    // =========================================================================
+    // 8. GRAPHICAL ANIMATION ROUTINES (HTML5 CANVAS)
+    // =========================================================================
+    function initProceduralVideoCanvas() {
+      const canvas = document.getElementById("generative-video-canvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      
+      canvas.width = canvas.parentElement.clientWidth || 500;
+      canvas.height = canvas.parentElement.clientHeight || 200;
+      
+      let step = 0;
+      function loop() {
+        requestAnimationFrame(loop);
+        step += isPlayingSequel ? 0.05 : 0.01;
+        
+        ctx.fillStyle = "rgba(5, 7, 12, 0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+          ctx.strokeStyle = i % 2 === 0 ? "rgba(0, 184, 255, 0.35)" : "rgba(179, 71, 255, 0.25)";
+          ctx.beginPath();
+          for (let x = 0; x < canvas.width; x += 10) {
+            const y = canvas.height / 2 + Math.sin(x * 0.01 + step + i) * 35 + Math.cos(step * 0.4) * 10;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      }
+      loop();
+    }
+
+    function initVectorMatrixCanvas() {
+      const canvas = document.getElementById("vector-embedding-matrix-canvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      
+      canvas.width = canvas.parentElement.clientWidth || 400;
+      canvas.height = canvas.parentElement.clientHeight || 200;
+      
+      let count = 0;
+      function loop() {
+        requestAnimationFrame(loop);
+        count++;
+        
+        ctx.fillStyle = "rgba(5, 5, 5, 0.15)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = "rgba(179, 71, 255, 0.6)";
+        for (let i = 0; i < 25; i++) {
+          const x = (Math.sin(count * 0.01 + i) * 0.4 + 0.5) * canvas.width;
+          const y = (Math.cos(count * 0.02 + i * 0.5) * 0.4 + 0.5) * canvas.height;
+          ctx.fillRect(x, y, 3, 3);
+        }
+      }
+      loop();
+    }
+
+    function initChromaticEdgeCanvas() {
+      const canvas = document.getElementById("chromatic-render-void-canvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      
+      canvas.width = canvas.parentElement.clientWidth || 400;
+      canvas.height = canvas.parentElement.clientHeight || 200;
+      
+      let step = 0;
+      function loop() {
+        requestAnimationFrame(loop);
+        step += 0.02;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = "rgba(245, 158, 11, 0.45)";
+        ctx.lineWidth = 1.5;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(step * 0.5);
+        
+        const size = 50 + Math.sin(step) * 10;
+        ctx.strokeRect(-size, -size, size * 2, size * 2);
+        
+        ctx.strokeStyle = "rgba(179, 71, 255, 0.35)";
+        ctx.rotate(-step * 0.8);
+        ctx.strokeRect(-size / 1.5, -size / 1.5, (size * 2) / 1.5, (size * 2) / 1.5);
+        
+        ctx.restore();
+      }
+      loop();
+    }
+  </script>
+</body>
+</html>

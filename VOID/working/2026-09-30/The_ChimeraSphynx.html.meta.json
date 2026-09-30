@@ -1,0 +1,14 @@
+{
+  "schema": "void.working-copy.v0.1",
+  "source_file_ref": "file_000000005c54820ca32a8f5abceac8c7",
+  "source_name": "The ChimeraSphynx.html",
+  "source_mime_type": "text/html",
+  "source_size_bytes": 11857,
+  "origin_anchor": "NEXUS://0.0.0",
+  "state": "IMPORTED_WORKING_COPY",
+  "original_location_policy": "original remains outside Git",
+  "content_sha256": null,
+  "exact_byte_verification": "pending",
+  "promotion_target": "VOID/stars/",
+  "notes": "Textual working copy imported for later formatting, repair, testing and lineage promotion."
+}
