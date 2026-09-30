@@ -1,0 +1,91 @@
+{
+  "schema": "cryptic.atoms.v0.1",
+  "origin": "NEXUS://0.0.0",
+  "quick_refs": {
+    "gemini_share_alpha": {
+      "raw": "https://share.google/aimode/HC7n2Ft23AtIdNeS3",
+      "base64": "aHR0cHM6Ly9zaGFyZS5nb29nbGUvYWltb2RlL0hDN24yRnQyM0F0SWROZVMz",
+      "text_fragment": null
+    },
+    "gemini_share_beta": {
+      "raw": "https://share.google/aimode/GLT1lttzwHAP4zqdV",
+      "base64": "aHR0cHM6Ly9zaGFyZS5nb29nbGUvYWltb2RlL0dMVDFsdHR6d0hBUDR6cWRW",
+      "text_fragment": null
+    },
+    "ann_benchmark_milvus_knowhere": {
+      "raw": "https://ann-benchmarks.com/Milvus(Knowhere).html"
+    }
+  },
+  "atoms": [
+    {
+      "id": "atom:zenith-monolith",
+      "source": "gemininexus_zenith_multi_ai_canvas_monolith_htmx_2_0_encapsulated.html",
+      "role": "browser-canvas-ui",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:reichsmark-terminal",
+      "source": "terminal_x5f_instance_x5f_reichsmark_x5f_mathematica.html",
+      "role": "terminal-ui-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:synapse-bootstrap",
+      "source": "synapse-terminal-v0.2.0-bootstrap.sh",
+      "role": "evidence-first-executor-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:gemini-termux-cli",
+      "source": "Gemini Termux CLI.docx",
+      "role": "gemini-api-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:high-fidelity-terminal",
+      "source": "high_x5f_fidelity_x5f_terminal_x5f_max(1).html",
+      "role": "terminal-ui-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:kali-nethunter-term",
+      "source": "kali-nethunter-term-master.zip",
+      "role": "mobile-terminal-archive",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:synapse-v6-sums",
+      "source": "Nexus-Synapse-Terminal-v6.SHA256SUMS",
+      "role": "checksum-evidence",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:nexus-terminal-live-v5",
+      "source": "NEXUS_TERMINAL_LIVE_v5.sh",
+      "role": "localhost-terminal-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:twin-core-router-doc",
+      "source": "tailwind cli integration...docx",
+      "role": "twin-core-router-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    },
+    {
+      "id": "atom:enhanced-browser-terminal",
+      "source": "enhanced_browser_terminal.js",
+      "role": "browser-devtools-adb-reference",
+      "state": "CATALOGED",
+      "sha256": null
+    }
+  ]
+}

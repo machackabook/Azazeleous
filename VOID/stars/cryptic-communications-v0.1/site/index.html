@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GeminiNexus Zenith • HTMX 2.0 Multi-AI Canvas Monolith</title>
+
+    <!-- Progressive Web App (PWA) Manifest for Android WebAPK and Desktop Installation -->
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkdlbWluaU5leHVzIFplbml0aCBNb25vbGl0aCIsCiAgInNob3J0X25hbWUiOiAiWmVuaXRoIiwKICAic3RhcnRfdXJsIjogIi8iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMjAzMDgiLAogICJ0aGVtZV9jb2xvciIjogIiMwMGZmY2MiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL3BsYWNlaG9sZC5jby8xOTJ4MTkyLzAwZmZjYy8wMjAzMDg/dGV4dD1aZW5pdGgiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+
+    <!-- Core CDNs: Tailwind CSS, HTMX 2.0, and Three.js -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Typography -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-color: #020308;
+            --panel-bg: rgba(6, 10, 24, 0.88);
+            --panel-border: rgba(0, 255, 204, 0.28);
+            --accent-cyan: #00ffcc;
+            --accent-pink: #ff0077;
+            --accent-purple: #b900ff;
+            --accent-gold: #ffaa00;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #00f3ff;
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-sans-ui { font-family: 'Inter', sans-serif; }
+
+        /* Canvas Stacking Context */
+        .void-canvas-plane {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #dataLayerCanvas { z-index: 0; }
+        #barrierGridCanvas { z-index: 1; pointer-events: none; }
+        #voidCanvas { z-index: 2; }
+        #torusCanvas { z-index: 3; }
+
+        /* Liquid RGB Glowing Borders */
+        .liquid-rgb-border {
+            border: 2px solid transparent;
+            border-image: linear-gradient(45deg, #00ffcc, #ff0077, #b900ff, #00ffcc) 1;
+            animation: hueRotateBorder 6s linear infinite;
+        }
+
+        @keyframes hueRotateBorder {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        /* Glassmorphic Panels */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(0, 255, 204, 0.25);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 255, 204, 0.06);
+            border-radius: 0.85rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-panel-pink { border-color: rgba(255, 0, 119, 0.38); box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,0,119,0.06); }
+        .glass-panel-purple { border-color: rgba(185, 0, 255, 0.38); box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(185,0,255,0.06); }
+        .glass-panel-emerald { border-color: rgba(52, 211, 153, 0.38); box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(52,211,153,0.06); }
+
+        .terminal-header {
+            background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.88) 100%);
+        }
+
+        .glow-cyan { text-shadow: 0 0 10px rgba(0, 255, 204, 0.65); }
+        .glow-pink { text-shadow: 0 0 10px rgba(255, 0, 119, 0.65); }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #03040c; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
+
+        /* 4-Corner Surround Layout */
+        .surround-layout-grid {
+            position: absolute;
+            inset: 52px 14px 64px 14px;
+            display: grid;
+            grid-template-columns: minmax(290px, 360px) 1fr minmax(290px, 380px);
+            grid-template-rows: 1fr 1fr;
+            gap: 14px;
+            z-index: 20;
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
+        .surround-layout-grid > * {
+            pointer-events: auto;
+        }
+
+        .center-unobstructed-viewport {
+            grid-column: 2 / span 1;
+            grid-row: 1 / span 2;
+            pointer-events: none !important;
+            background: transparent;
+        }
+
+        @media (max-aspect-ratio: 1/1) {
+            .surround-layout-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+                overflow-y: auto;
+                pointer-events: auto;
+            }
+            .center-unobstructed-viewport {
+                display: none;
+            }
+        }
+
+        /* Docking Layout States */
+        .surround-layout-grid.dock-left {
+            grid-template-columns: 380px 1fr 0px;
+        }
+        .surround-layout-grid.dock-left .panel-right-col {
+            opacity: 0;
+            transform: translateX(60px);
+            pointer-events: none;
+        }
+
+        .surround-layout-grid.dock-right {
+            grid-template-columns: 0px 1fr 400px;
+        }
+        .surround-layout-grid.dock-right .panel-left-col {
+            opacity: 0;
+            transform: translateX(-60px);
+            pointer-events: none;
+        }
+
+        .hud-hidden {
+            opacity: 0 !important;
+            transform: scale(0.97) translateY(12px) !important;
+            pointer-events: none !important;
+        }
+
+        .tab-preview-badge {
+            width: 46px;
+            height: 28px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            object-fit: cover;
+            background: #000;
+            transition: all 0.2s ease;
+        }
+        .tab-preview-badge:hover {
+            border-color: #00ffcc;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        /* Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        /* Bottom Terminal Drawer */
+        #bottom-terminal {
+            position: fixed;
+            bottom: 0;
+            left: 14px;
+            right: 14px;
+            height: 52px;
+            z-index: 40;
+            transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s ease;
+        }
+
+        #bottom-terminal.expanded {
+            height: 260px;
+        }
+
+        .term-peak-handle {
+            height: 22px;
+            background: rgba(15, 23, 42, 0.96);
+            border-top: 1px solid rgba(0, 255, 204, 0.4);
+            border-left: 1px solid rgba(0, 255, 204, 0.2);
+            border-right: 1px solid rgba(0, 255, 204, 0.2);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col h-screen overflow-hidden selection:bg-cyan-500 selection:text-black"
+      hx-ext="virtual-kernel">
+
+    <!-- ================================================================= -->
+    <!-- QUAD-CANVAS GRAPHICS ENGINE PIPELINE                              -->
+    <!-- ================================================================= -->
+    <!-- LAYER 0: DEEP DATA LAYER & ETHERNET NEXUS -->
+    <canvas id="dataLayerCanvas" class="void-canvas-plane"></canvas>
+
+    <!-- LAYER 1: 10,000 PERIMETER BARRIER GRID (STRETCHED TO WALLS) -->
+    <canvas id="barrierGridCanvas" class="void-canvas-plane"></canvas>
+
+    <!-- LAYER 2: HAMILTONIAN SINGULARITY PHYSICS FIELD -->
+    <canvas id="voidCanvas" class="void-canvas-plane"></canvas>
+
+    <!-- LAYER 3: 6D TORUS KNOT & ATOMIC ANCHOR CORE AT (0,0,0) -->
+    <canvas id="torusCanvas" class="void-canvas-plane"></canvas>
+
+    <!-- ================================================================= -->
+    <!-- TOP HEADER TOOLBAR (Double-click toggles Clean HUD Mode)          -->
+    <!-- ================================================================= -->
+    <header id="top-header" ondblclick="toggleClearUIVisibility()" class="fixed top-0 left-0 right-0 h-11 z-50 bg-slate-950/92 border-b border-cyan-500/30 px-3 flex justify-between items-center backdrop-blur-md cursor-pointer transition-all">
+        <div class="flex items-center gap-3">
+            <div class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+            </div>
+            <div>
+                <h1 class="text-xs font-bold tracking-widest orbitron text-cyan-400 glow-cyan flex items-center gap-2">
+                    ⚡ GEMININEXUS ZENITH
+                    <span class="text-slate-500 text-[10px] hidden md:inline">// HTMX 2.0 ENCAPSULATED &bull; ORIGIN [0,0,0] &bull; 10K GRID RAID</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- Offscreen Canvas Data URL Thumbnail Previews & Top Controls -->
+        <div class="flex items-center gap-2 md:gap-3" onclick="event.stopPropagation()">
+            <!-- Offscreen Data URL Tab Previews -->
+            <div id="data-url-tabs-container" class="hidden sm:flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-lg border border-slate-800">
+                <div title="Panel 1: Genesis Screener" onclick="focusPanel('p1')" class="cursor-pointer flex items-center gap-1">
+                    <img id="thumb-p1" class="tab-preview-badge" alt="P1">
+                    <span class="text-[9px] text-pink-400 font-mono hidden lg:inline">P1</span>
+                </div>
+                <div title="Panel 2: Singularity Diagnostics" onclick="focusPanel('p2')" class="cursor-pointer flex items-center gap-1">
+                    <img id="thumb-p2" class="tab-preview-badge" alt="P2">
+                    <span class="text-[9px] text-cyan-400 font-mono hidden lg:inline">P2</span>
+                </div>
+                <div title="Panel 3: Neural Foundry" onclick="focusPanel('p3')" class="cursor-pointer flex items-center gap-1">
+                    <img id="thumb-p3" class="tab-preview-badge" alt="P3">
+                    <span class="text-[9px] text-purple-400 font-mono hidden lg:inline">P3</span>
+                </div>
+                <div title="Panel 4: Tensor Matrix" onclick="focusPanel('p4')" class="cursor-pointer flex items-center gap-1">
+                    <img id="thumb-p4" class="tab-preview-badge" alt="P4">
+                    <span class="text-[9px] text-emerald-400 font-mono hidden lg:inline">P4</span>
+                </div>
+            </div>
+
+            <!-- Viewport Zoom Scale Controller -->
+            <div class="flex items-center bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800 text-[10px] font-mono gap-1 text-slate-400">
+                <span class="text-cyan-400 font-bold">ZOOM:</span>
+                <button onclick="adjustZoom(-0.15)" class="px-1.5 hover:text-white font-bold transition">-</button>
+                <span id="zoom-level-indicator" class="text-emerald-400 font-bold w-11 text-center">0.75x</span>
+                <button onclick="adjustZoom(0.15)" class="px-1.5 hover:text-white font-bold transition">+</button>
+                <button onclick="resetZoom()" class="text-[9px] text-slate-500 hover:text-cyan-300 ml-1">RESET</button>
+            </div>
+
+            <!-- HTMX-Powered Mesh Ping Probe -->
+            <button hx-post="/api/mesh/ping"
+                    hx-target="#top-mesh-ping-badge"
+                    hx-swap="outerHTML"
+                    class="hidden lg:flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-[10px] font-mono rounded-lg text-slate-300 transition">
+                <span id="top-mesh-ping-badge" class="flex items-center gap-1 text-cyan-400">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> P2P MESH: 0.8ms
+                </span>
+            </button>
+
+            <!-- Auto-Restabilizer Automation Toggle -->
+            <button id="btn-auto-restabilize" onclick="toggleAutoRestabilize()" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/50 hover:bg-cyan-900 text-cyan-300 text-[10px] font-mono rounded-lg transition flex items-center gap-1">
+                <span id="auto-restabilize-dot" class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>AUTO-STABILIZE: ON</span>
+            </button>
+
+            <!-- Docking Controls -->
+            <div class="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px] font-mono">
+                <button onclick="setDockingMode('surround')" id="dock-btn-surround" class="px-2 py-0.5 rounded transition bg-cyan-500 text-slate-950 font-bold">4-CORNER</button>
+                <button onclick="setDockingMode('left')" id="dock-btn-left" class="px-2 py-0.5 rounded transition text-slate-400 hover:text-white">LEFT</button>
+                <button onclick="setDockingMode('right')" id="dock-btn-right" class="px-2 py-0.5 rounded transition text-slate-400 hover:text-white">RIGHT</button>
+            </div>
+
+            <!-- Standalone Quine Assimilation Export Button -->
+            <button onclick="assimilateAndExportQuine()" title="Export self-sustaining standalone Quine HTML package" class="px-2 py-0.5 bg-amber-950/80 hover:bg-amber-900 text-amber-300 text-[10px] font-bold rounded-lg border border-amber-600 transition flex items-center gap-1">
+                💾 QUINE
+            </button>
+
+            <!-- Bottom Terminal Peak Toggle -->
+            <button onclick="toggleTerminalExpansion()" class="px-2 py-1 bg-cyan-900/80 hover:bg-cyan-800 text-cyan-300 text-[10px] font-bold rounded-lg border border-cyan-700 transition">
+                📟 TERM
+            </button>
+
+            <button onclick="toggleClearUIVisibility()" class="px-2 py-1 bg-pink-600/80 hover:bg-pink-500 text-white text-[10px] font-bold rounded-lg transition">
+                👁️️ HUD
+            </button>
+        </div>
+    </header>
+
+    <!-- ================================================================= -->
+    <!-- 4-CORNER SURROUND MATRIX UI (UNOBSTRUCTED ORIGIN AT 0,0,0)         -->
+    <!-- ================================================================= -->
+    <main id="surround-ui-container" class="surround-layout-grid">
+
+        <!-- LEFT COLUMN PANELS -->
+        <div class="panel-left-col flex flex-col gap-3 min-h-0">
+            
+            <!-- PANEL 1: GENESIS SCREENER HUB (TOP-LEFT) -->
+            <section id="panel-p1" class="glass-panel glass-panel-pink rounded-xl flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div class="terminal-header px-3 py-1.5 border-b border-pink-500/30 flex justify-between items-center">
+                    <span class="text-xs font-bold text-pink-400 glow-pink flex items-center gap-1">
+                        ⚡ 1. Genesis Screener &amp; Ingress
+                    </span>
+                    <span id="p1-enclave-badge" class="text-[9px] text-slate-400 font-mono">HTMX 2.0 STREAMING</span>
+                </div>
+                <div id="p1-terminal" class="flex-1 p-2.5 overflow-y-auto text-[10px] space-y-1.5 font-mono select-text bg-slate-950/60">
+                    <div class="text-pink-400 font-bold">⚡ ORACLE_INGRESS_STREAM_ONLINE</div>
+                    <div class="text-slate-300">Anchor origin [0,0,0] locked. Wall-stretched 10k grid live.</div>
+                    <div class="text-emerald-400">[HTMX 2.0] Virtual Kernel loaded &bull; Event delegation active.</div>
+                    <div class="text-amber-400">$ transport --base64 shorthand --shorthand ":|.l'"</div>
+                </div>
+                <!-- HTMX Form Input Injection -->
+                <form hx-post="/api/screener/inject"
+                      hx-target="#p1-terminal"
+                      hx-swap="beforeend"
+                      hx-on::after-request="this.reset(); document.getElementById('p1-terminal').scrollTop = document.getElementById('p1-terminal').scrollHeight;"
+                      class="p-2 bg-slate-900/80 border-t border-slate-800 flex gap-1.5">
+                    <input name="directive" type="text" placeholder="Inject HTMX directive into tunnel..." class="flex-1 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-xs text-cyan-300 focus:outline-none focus:border-pink-500 font-mono">
+                    <button type="submit" class="px-2.5 py-0.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded transition">
+                        INJECT
+                    </button>
+                </form>
+            </section>
+
+            <!-- PANEL 2: SINGULARITY INTEGRATION DIAGNOSTICS (BOTTOM-LEFT) -->
+            <section id="panel-p2" class="glass-panel rounded-xl flex-1 flex flex-col min-h-0 overflow-hidden text-[10px]">
+                <div class="terminal-header px-3 py-1.5 border-b border-cyan-500/30 flex justify-between items-center">
+                    <span class="text-xs font-bold text-cyan-400 glow-cyan">
+                        🔬 2. Singularity Diagnostics &amp; &Phi; Engine
+                    </span>
+                    <span id="p2-status-badge" class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded font-bold">RESTABILIZED</span>
+                </div>
+                <div class="p-2.5 overflow-y-auto space-y-2 flex-1 bg-slate-950/60">
+                    <!-- Integration Methodology Toggle -->
+                    <div class="space-y-1">
+                        <span class="text-slate-400 font-bold block">INTEGRATION METHODOLOGY:</span>
+                        <div class="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded border border-slate-800">
+                            <button onclick="setSimMode('euler')" id="btn-euler" class="py-1 rounded text-slate-400 hover:text-white transition">Forward Euler</button>
+                            <button onclick="setSimMode('leapfrog')" id="btn-leapfrog" class="py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 font-bold transition">Symplectic Leapfrog</button>
+                        </div>
+                    </div>
+
+                    <!-- Plummer Softening Slider -->
+                    <div>
+                        <div class="flex justify-between text-slate-300 mb-0.5">
+                            <span>Plummer Softening (&epsilon;):</span>
+                            <strong id="val-softening" class="text-cyan-400 font-mono">0.00</strong>
+                        </div>
+                        <input type="range" id="slider-softening" min="0" max="40" step="0.5" value="0" oninput="updateSoftening(this.value)">
+                    </div>
+
+                    <!-- Time Step Magnitude Slider -->
+                    <div>
+                        <div class="flex justify-between text-slate-300 mb-0.5">
+                            <span>Time Step (dt):</span>
+                            <strong id="val-dt" class="text-cyan-400 font-mono">0.10</strong>
+                        </div>
+                        <input type="range" id="slider-dt" min="0.01" max="0.5" step="0.01" value="0.10" oninput="updateDt(this.value)">
+                    </div>
+
+                    <!-- Central Core Mass Slider -->
+                    <div>
+                        <div class="flex justify-between text-slate-300 mb-0.5">
+                            <span>Central Core Mass (&mu;):</span>
+                            <strong id="val-mass" class="text-cyan-400 font-mono">15000</strong>
+                        </div>
+                        <input type="range" id="slider-mass" min="1000" max="40000" step="1000" value="15000" oninput="updateMass(this.value)">
+                    </div>
+
+                    <!-- Phi Coherence & Metrics -->
+                    <div class="bg-slate-900/90 p-1.5 rounded border border-cyan-900/50 flex justify-between items-center">
+                        <span class="text-slate-400">PHI COHERENCE (&Phi; = 1.618):</span>
+                        <span id="phi-coherence-val" class="text-emerald-400 font-bold font-mono">1.618033</span>
+                    </div>
+
+                    <div id="p2-metrics-cluster" class="bg-slate-950 p-2 rounded border border-slate-800 space-y-1 font-mono">
+                        <div class="flex justify-between"><span>Separation (r):</span><strong id="diag-r" class="text-white">--</strong></div>
+                        <div class="flex justify-between"><span>Energy (H):</span><strong id="diag-energy" class="text-emerald-400">--</strong></div>
+                        <div class="flex justify-between"><span>Velocity Vector:</span><strong id="diag-vel" class="text-cyan-400">--</strong></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button onclick="resetVectorState()" class="py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700 text-cyan-300 rounded font-bold transition">RESET TEST VECTOR</button>
+                        <button onclick="forceDirectSingularityRun()" class="py-1 bg-pink-950 hover:bg-pink-900 border border-pink-700 text-pink-300 rounded font-bold transition">SINGULARITY RUN</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- CENTER UNOBSTRUCTED CLEARANCE VIEWPORT -->
+        <div class="center-unobstructed-viewport flex items-center justify-center">
+            <div class="pointer-events-none text-center opacity-40 hover:opacity-100 transition-opacity">
+                <span class="orbitron text-[9px] text-cyan-400 tracking-widest block">SINGULARITY ATTRACTOR CORE</span>
+                <span class="text-[8px] text-slate-500 font-mono">SCROLL/PINCH TO ZOOM &bull; HOLD ANCHOR [0, 0, 0] TO COALESCE ATOM</span>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN PANELS -->
+        <div class="panel-right-col flex flex-col gap-3 min-h-0">
+            
+            <!-- PANEL 3: COGNITOFORGE NEURAL FOUNDRY (TOP-RIGHT) -->
+            <section id="panel-p3" class="glass-panel glass-panel-purple rounded-xl flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div class="terminal-header px-3 py-1.5 border-b border-purple-500/30 flex justify-between items-center">
+                    <span class="text-xs font-bold text-purple-400 glow-cyan">
+                        🧠 3. CognitoForge Foundry &amp; Multi-AI Engine
+                    </span>
+                    <!-- HTMX Polling Trigger Button (Dispatches /api/dialectic/step) -->
+                    <button hx-post="/api/dialectic/step"
+                            hx-target="#p3-stream"
+                            hx-swap="beforeend"
+                            hx-on::after-request="document.getElementById('p3-stream').scrollTop = document.getElementById('p3-stream').scrollHeight;"
+                            class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 rounded border border-purple-700 text-[10px] transition">
+                        + STEP DIALECTIC
+                    </button>
+                </div>
+                <!-- Dynamic message stream (also polls every 4s via HTMX 2.0 trigger) -->
+                <div id="p3-stream"
+                     hx-post="/api/dialectic/step"
+                     hx-trigger="every 4s"
+                     hx-swap="beforeend"
+                     hx-on::after-request="this.scrollTop = this.scrollHeight;"
+                     class="flex-1 p-2.5 overflow-y-auto space-y-2 text-xs bg-slate-950/60 select-text">
+                    <!-- Seed dialectic message -->
+                    <div class="p-2 rounded-lg border border-cyan-500/40 bg-cyan-950/40 space-y-1">
+                        <div class="flex justify-between items-center text-[9px] font-mono">
+                            <span class="text-cyan-400 font-bold">Gemini Pro</span>
+                            <span class="text-slate-500">BOOT</span>
+                        </div>
+                        <div class="text-slate-200 text-[11px] font-sans">Data Layer 0 Ethernet Nexus stream locked at anchor [0,0,0]. Atom coalescence active.</div>
+                    </div>
+                </div>
+                <div class="px-2 py-1 bg-slate-900/80 border-t border-slate-800 flex justify-between items-center text-[9px] text-slate-400 font-mono">
+                    <span>MODEL: <strong class="text-cyan-400">gemini-2.5-flash-preview-09-2025</strong></span>
+                    <span>TICK: <strong id="p3-tick-count" class="text-purple-400">1</strong></span>
+                </div>
+            </section>
+
+            <!-- PANEL 4: OMNINEXUS 4-QUADRANT RAID MATRIX (BOTTOM-RIGHT) -->
+            <section id="panel-p4" class="glass-panel glass-panel-emerald rounded-xl flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div class="terminal-header px-3 py-1.5 border-b border-emerald-500/30 flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-400">
+                        🌐 4. Fused RAID Quadrants ($Q_1 \dots Q_4$)
+                    </span>
+                    <span id="p4-grid-avg" class="text-[9px] text-cyan-400 font-mono">RAID AVG: 0%</span>
+                </div>
+                <div class="flex-1 p-2 bg-slate-950/80 flex flex-col min-h-0">
+                    <div id="tensor-grid" class="grid grid-cols-20 gap-0.5 flex-1 p-1 bg-slate-950 overflow-hidden rounded border border-slate-800">
+                        <!-- 200 tensor cells generated here -->
+                    </div>
+                </div>
+                <div class="p-2 border-t border-slate-800 bg-slate-900/80 grid grid-cols-3 gap-1.5 text-[9px] font-mono">
+                    <div class="bg-slate-950 p-1 rounded border border-slate-800">
+                        <span class="text-slate-500 block">JACCARD ($J$):</span>
+                        <span id="metric-jaccard" class="text-emerald-400 font-bold text-xs">0.864</span>
+                    </div>
+                    <div class="bg-slate-950 p-1 rounded border border-slate-800">
+                        <span class="text-slate-500 block">COMMAND (+/-):</span>
+                        <span id="metric-cmd" class="text-pink-400 font-bold text-xs">-0 (EXEC)</span>
+                    </div>
+                    <div class="bg-slate-950 p-1 rounded border border-slate-800">
+                        <span class="text-slate-500 block">SHORTHAND:</span>
+                        <span id="metric-shorthand" class="text-amber-400 font-bold text-xs">:|.l'</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- BOTTOM PEAK & HIDE TERMINAL (DIRECT DATA TUNNEL TO ANCHOR 0,0,0)  -->
+    <!-- ================================================================= -->
+    <div id="bottom-terminal" class="glass-panel flex flex-col overflow-hidden">
+        <div class="term-peak-handle flex items-center justify-between px-3" onclick="toggleTerminalExpansion()">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span class="text-[10px] font-bold text-cyan-300 font-mono uppercase tracking-wider">
+                    📟 DATA TUNNEL TERMINAL // ANCHOR [0,0,0] DIRECT PIPE
+                </span>
+            </div>
+            <div class="flex items-center gap-2 text-[9px] text-slate-400 font-mono">
+                <span id="term-status-tag" class="text-emerald-400">STATE: PEAKING</span>
+                <span id="term-expand-icon">▲ CLICK TO EXPAND</span>
+            </div>
+        </div>
+
+        <div class="flex-1 p-2.5 flex flex-col min-h-0 bg-slate-950/92 font-mono text-[10px]">
+            <div id="term-output-stream" class="flex-1 overflow-y-auto space-y-1 pr-1 text-slate-300">
+                <div class="text-cyan-400">[TUNNEL INIT] Direct data pipe mapped to origin (0,0,0) and 10,000 grid cells.</div>
+                <div class="text-purple-400">[HTMX 2.0] Reactive virtual endpoints initialized with out-of-band updates.</div>
+                <div class="text-emerald-400">[SHORTHAND] Command parser listening for Base64 single-width triggers (e.g., :|.l').</div>
+                <div class="text-amber-300">[TRY COMMANDS] "help", "probe", "pwa", "ai: your question", "mesh", or ":|.l'"</div>
+            </div>
+            <!-- HTMX-Powered Command Form -->
+            <form hx-post="/api/terminal/execute"
+                  hx-target="#term-output-stream"
+                  hx-swap="beforeend"
+                  hx-on::after-request="this.reset(); document.getElementById('term-output-stream').scrollTop = document.getElementById('term-output-stream').scrollHeight; triggerCoreCoalescePulse();"
+                  class="mt-2 pt-1 border-t border-slate-800 flex gap-2 items-center">
+                <span class="text-pink-400 font-bold">$+</span>
+                <input id="term-cmd-input"
+                       name="cmd"
+                       type="text"
+                       placeholder="Enter command or Base64 shorthand (or 'AI: explain singularity')..." 
+                       class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-300 focus:outline-none focus:border-cyan-400">
+                <button type="submit" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs rounded transition">
+                    RUN PIPE
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- NODE DATA INSPECTOR MODAL (HTMX TARGETED)                        -->
+    <!-- ================================================================= -->
+    <div id="node-inspector-modal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel max-w-xl w-full p-4 rounded-xl border-cyan-500/50 space-y-3 relative shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <span id="node-modal-title" class="text-xs font-bold text-cyan-400 font-mono">NODE DATA VIEWER</span>
+                <button onclick="closeNodeInspector()" class="text-rose-400 font-bold text-xs hover:text-rose-300 transition">✕ CLOSE</button>
+            </div>
+            <div id="node-modal-meta" class="text-[10px] text-slate-300 font-mono space-y-1">
+                <div>DIRECTORY: <span id="node-modal-path" class="text-amber-400">~/system/node</span></div>
+                <div>DATA URL: <span id="node-modal-url" class="text-emerald-400 truncate block">data:text/html;base64,...</span></div>
+            </div>
+            <div class="h-64 w-full bg-slate-950 rounded border border-slate-800 overflow-hidden">
+                <iframe id="node-modal-iframe" class="w-full h-full border-none" src="about:blank"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT MONOLITH ENGINE & HTMX 2.0 KERNEL EXTENSION            -->
+    <!-- ================================================================= -->
+    <script>
+        /* ------------------------------------------------------------- */
+        /* HTMX 2.0 CLIENT-SIDE VIRTUAL KERNEL EXTENSION                 */
+        /* ------------------------------------------------------------- */
+        // Intercepts HTMX HTTP requests client-side to supply immediate
+        // HTML-over-the-wire responses for the modular panels.
+        htmx.defineExtension('virtual-kernel', {
+            onEvent: function(name, evt) {
+                if (name === 'htmx:beforeRequest') {
+                    const xhr = evt.detail.xhr;
+                    const path = evt.detail.requestConfig.path;
+                    const verb = evt.detail.requestConfig.verb;
+                    const parameters = evt.detail.requestConfig.parameters;
+
+                    // Mock server route resolution
+                    let responseHtml = "";
+                    let isHandled = false;
+
+                    if (path === '/api/dialectic/step') {
+                        isHandled = true;
+                        responseHtml = generateDialecticTurnHtml();
+                    } else if (path === '/api/screener/inject') {
+                        isHandled = true;
+                        const directive = parameters.directive || "SYNCHRONIZATION_SIGNAL";
+                        const time = new Date().toLocaleTimeString();
+                        responseHtml = `
+                            <div class="text-pink-300 font-mono text-[10px]">
+                                [${time}] <span class="text-pink-500 font-bold">&gt;&gt;</span> INJECT: "${escapeHtml(directive)}"
+                            </div>
+                        `;
+                    } else if (path === '/api/mesh/ping') {
+                        isHandled = true;
+                        const pingMs = (0.4 + Math.random() * 0.9).toFixed(1);
+                        responseHtml = `
+                            <span id="top-mesh-ping-badge" class="flex items-center gap-1 text-cyan-400 animate-pulse">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> P2P MESH: ${pingMs}ms
+                            </span>
+                        `;
+                    } else if (path === '/api/terminal/execute') {
+                        isHandled = true;
+                        const cmd = (parameters.cmd || "").trim();
+                        responseHtml = processVirtualTerminalCommand(cmd);
+                    }
+
+                    if (isHandled) {
+                        // Prevent real network call and serve virtual response
+                        evt.preventDefault();
+                        setTimeout(() => {
+                            evt.detail.target.insertAdjacentHTML(
+                                evt.detail.requestConfig.swap || 'beforeend',
+                                responseHtml
+                            );
+                            htmx.process(evt.detail.target);
+                        }, 50);
+                    }
+                }
+            }
+        });
+
+        /* Utility HTML Escaper */
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag));
+        }
+
+        /* ------------------------------------------------------------- */
+        /* ENCLAVE API KEYS & LLM INTEGRATION                            */
+        /* ------------------------------------------------------------- */
+        const ENCRYPTED_DATA_ENCLAVE = {
+            apiKey: "", // Provided automatically by collaborative execution environment
+            models: [
+                "gemini-2.5-flash-preview-09-2025",
+                "gemini-3-flash-preview"
+            ],
+            retryDelays: [1000, 2000, 4000, 8000],
+            activeModelIndex: 0
+        };
+
+        async function callGeminiApiWithRetry(promptText, attempt = 0) {
+            const modelName = ENCRYPTED_DATA_ENCLAVE.models[ENCRYPTED_DATA_ENCLAVE.activeModelIndex];
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${ENCRYPTED_DATA_ENCLAVE.apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "No inference response.";
+            } catch (err) {
+                if (attempt < ENCRYPTED_DATA_ENCLAVE.retryDelays.length) {
+                    const delay = ENCRYPTED_DATA_ENCLAVE.retryDelays[attempt];
+                    await new Promise(res => setTimeout(res, delay));
+                    return callGeminiApiWithRetry(promptText, attempt + 1);
+                } else {
+                    ENCRYPTED_DATA_ENCLAVE.activeModelIndex = (ENCRYPTED_DATA_ENCLAVE.activeModelIndex + 1) % ENCRYPTED_DATA_ENCLAVE.models.length;
+                    return `[ENCLAVE RELAY] Failover active: Switched tier to ${ENCRYPTED_DATA_ENCLAVE.models[ENCRYPTED_DATA_ENCLAVE.activeModelIndex]}`;
+                }
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* GLOBAL VIEWPORT, ZOOM & ANCHOR (0,0,0) STATE                  */
+        /* ------------------------------------------------------------- */
+        let originX = window.innerWidth / 2;
+        let originY = window.innerHeight / 2;
+        let autoRestabilizeActive = true;
+        let sensorFlux = 0;
+
+        let globalZoomScale = 0.75;
+        const MIN_ZOOM = 0.25;
+        const MAX_ZOOM = 2.50;
+
+        function getResponsiveViewportScale() {
+            const baseDim = Math.min(window.innerWidth, window.innerHeight);
+            return (baseDim / 850.0) * globalZoomScale;
+        }
+
+        function adjustZoom(delta) {
+            globalZoomScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, globalZoomScale + delta));
+            updateZoomDisplay();
+        }
+
+        function resetZoom() {
+            globalZoomScale = 0.75;
+            updateZoomDisplay();
+        }
+
+        function updateZoomDisplay() {
+            const el = document.getElementById('zoom-level-indicator');
+            if (el) el.innerText = `${globalZoomScale.toFixed(2)}x`;
+        }
+
+        /* Mouse Wheel / Touch Zoom Events */
+        window.addEventListener('wheel', (e) => {
+            if (e.target.tagName === 'CANVAS' || e.target.id === 'surround-ui-container' || e.target.classList.contains('center-unobstructed-viewport')) {
+                e.preventDefault();
+                adjustZoom(e.deltaY < 0 ? 0.08 : -0.08);
+            }
+        }, { passive: false });
+
+        let isAnchorHolding = false;
+        let atomCoalesceFactor = 0;
+        let pointerPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+        window.addEventListener('mousemove', (e) => {
+            pointerPos.x = e.clientX;
+            pointerPos.y = e.clientY;
+            sensorFlux = Math.sqrt(Math.pow(e.movementX || 0, 2) + Math.pow(e.movementY || 0, 2)) * 0.1;
+        });
+
+        window.addEventListener('deviceorientation', (e) => {
+            if (e.beta || e.gamma) {
+                sensorFlux = (Math.abs(e.beta) + Math.abs(e.gamma)) * 0.05;
+            }
+        });
+
+        function triggerCoreCoalescePulse() {
+            isAnchorHolding = true;
+            setTimeout(() => { isAnchorHolding = false; }, 600);
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 1. OFFSCREEN CANVAS DATA URL THUMBNAIL ENGINE                 */
+        /* ------------------------------------------------------------- */
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = 160;
+        offscreenCanvas.height = 90;
+        const offCtx = offscreenCanvas.getContext('2d');
+
+        function generatePanelDataURLThumbnail(panelId, colorHex, label) {
+            if (!offCtx) return '';
+            offCtx.fillStyle = '#060a18';
+            offCtx.fillRect(0, 0, 160, 90);
+
+            offCtx.fillStyle = colorHex;
+            offCtx.fillRect(0, 0, 160, 12);
+
+            offCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            offCtx.lineWidth = 1;
+            for (let x = 0; x < 160; x += 16) {
+                offCtx.beginPath();
+                offCtx.moveTo(x, 12);
+                offCtx.lineTo(x, 90);
+                offCtx.stroke();
+            }
+
+            offCtx.fillStyle = colorHex;
+            offCtx.beginPath();
+            offCtx.arc(140, 30, 8, 0, Math.PI * 2);
+            offCtx.fill();
+
+            offCtx.fillStyle = '#ffffff';
+            offCtx.font = 'bold 11px monospace';
+            offCtx.fillText(label, 10, 34);
+
+            offCtx.strokeStyle = colorHex;
+            offCtx.lineWidth = 2;
+            offCtx.beginPath();
+            offCtx.moveTo(10, 75);
+            offCtx.lineTo(40, 60);
+            offCtx.lineTo(80, 70);
+            offCtx.lineTo(120, 45);
+            offCtx.lineTo(150, 55);
+            offCtx.stroke();
+
+            return offscreenCanvas.toDataURL('image/png');
+        }
+
+        function refreshAllHeaderThumbnails() {
+            const t1 = generatePanelDataURLThumbnail('p1', '#ff0077', 'P1 SCREENER');
+            const t2 = generatePanelDataURLThumbnail('p2', '#00ffcc', 'P2 SINGULARITY');
+            const t3 = generatePanelDataURLThumbnail('p3', '#b900ff', 'P3 FOUNDRY');
+            const t4 = generatePanelDataURLThumbnail('p4', '#34d399', 'P4 TENSOR');
+
+            document.getElementById('thumb-p1').src = t1;
+            document.getElementById('thumb-p2').src = t2;
+            document.getElementById('thumb-p3').src = t3;
+            document.getElementById('thumb-p4').src = t4;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 2. LAYER 0: DEEP DATA LAYER & ETHERNET NEXUS                  */
+        /* ------------------------------------------------------------- */
+        const dataLayerCanvas = document.getElementById('dataLayerCanvas');
+        const dataCtx = dataLayerCanvas.getContext('2d');
+
+        const NUM_DATA_ORBS = 64;
+        const dataOrbs = [];
+
+        const DIRECTORY_NODES = [
+            { path: "~/system/partition/data", desc: "Data Layer Volume Storage Partition", url: "data:text/html;base64,PGgxPlBhcnRpdGlvbiBEYXRhPC9oMT4=" },
+            { path: "~/system/partition/ui", desc: "UI Renderer Partition", url: "data:text/html;base64,PGgxPlBhcnRpdGlvbiBVSTwvaDE+" },
+            { path: "~/ethernet/nexus", desc: "Ethernet Data Nexus Anchor", url: "data:text/html;base64,PGgxPkV0aGVybmV0IE5leHVzPC9oMT4=" },
+            { path: "~/raid/quadrants", desc: "4 Fused RAID Quadrants ($Q_1..Q_4$)", url: "data:text/html;base64,PGgxPlJBSUQgTWF0cml4PC9oMT4=" }
+        ];
+
+        function initDataOrbs() {
+            dataOrbs.length = 0;
+            const viewScale = getResponsiveViewportScale();
+            for (let i = 0; i < NUM_DATA_ORBS; i++) {
+                const angle = (i / NUM_DATA_ORBS) * Math.PI * 2;
+                const dist = (90 + Math.random() * (Math.max(window.innerWidth, window.innerHeight) * 0.45)) * viewScale;
+                const dirMeta = DIRECTORY_NODES[i % DIRECTORY_NODES.length];
+                dataOrbs.push({
+                    angle: angle,
+                    distance: dist,
+                    orbitSpeed: (Math.random() - 0.5) * 0.008,
+                    radius: (3 + Math.random() * 8) * viewScale,
+                    hue: Math.random() * 360,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    path: dirMeta.path,
+                    desc: dirMeta.desc,
+                    dataUrl: dirMeta.url
+                });
+            }
+        }
+
+        function renderDataLayer() {
+            dataCtx.fillStyle = 'rgba(2, 3, 8, 0.35)';
+            dataCtx.fillRect(0, 0, dataLayerCanvas.width, dataLayerCanvas.height);
+
+            const time = Date.now() * 0.001;
+            const viewScale = getResponsiveViewportScale();
+
+            // Ethernet Connection Pipelines Converging on Origin (0,0,0)
+            dataCtx.lineWidth = Math.max(1, 1.2 * viewScale);
+            for (let i = 0; i < 12; i++) {
+                const pipeAngle = (i / 12) * Math.PI * 2 + time * 0.05;
+                const outerX = originX + Math.cos(pipeAngle) * Math.max(window.innerWidth, window.innerHeight);
+                const outerY = originY + Math.sin(pipeAngle) * Math.max(window.innerWidth, window.innerHeight);
+
+                const pipeGradient = dataCtx.createLinearGradient(originX, originY, outerX, outerY);
+                pipeGradient.addColorStop(0, 'rgba(0, 255, 204, 0.85)');
+                pipeGradient.addColorStop(0.5, 'rgba(185, 0, 255, 0.35)');
+                pipeGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                dataCtx.strokeStyle = pipeGradient;
+                dataCtx.beginPath();
+                dataCtx.moveTo(originX, originY);
+                dataCtx.lineTo(outerX, outerY);
+                dataCtx.stroke();
+            }
+
+            // Orbital Fractal Data Orbs
+            dataOrbs.forEach((orb, idx) => {
+                orb.angle += orb.orbitSpeed;
+                orb.pulsePhase += 0.03;
+                orb.hue = (orb.hue + 0.2) % 360;
+
+                let currentDist = orb.distance + Math.sin(orb.pulsePhase) * (15 * viewScale);
+                if (isAnchorHolding) {
+                    currentDist = Math.max(20 * viewScale, currentDist * (1 - atomCoalesceFactor));
+                }
+
+                const x = originX + Math.cos(orb.angle) * currentDist;
+                const y = originY + Math.sin(orb.angle) * currentDist;
+
+                // Inter-Orb neural links
+                for (let j = idx + 1; j < dataOrbs.length; j++) {
+                    const orb2 = dataOrbs[j];
+                    const x2 = originX + Math.cos(orb2.angle) * orb2.distance;
+                    const y2 = originY + Math.sin(orb2.angle) * orb2.distance;
+                    const dx = x - x2;
+                    const dy = y - y2;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    const connectRadius = 130 * viewScale;
+                    if (dist < connectRadius) {
+                        dataCtx.strokeStyle = `hsla(${orb.hue}, 100%, 60%, ${0.22 * (1 - dist / connectRadius)})`;
+                        dataCtx.lineWidth = Math.max(0.5, 1 * viewScale);
+                        dataCtx.beginPath();
+                        dataCtx.moveTo(x, y);
+                        dataCtx.lineTo(x2, y2);
+                        dataCtx.stroke();
+                    }
+                }
+
+                const orbGlow = dataCtx.createRadialGradient(x, y, 1, x, y, Math.max(2, orb.radius * 2.5));
+                orbGlow.addColorStop(0, `hsla(${orb.hue}, 100%, 75%, 0.9)`);
+                orbGlow.addColorStop(0.5, `hsla(${orb.hue}, 100%, 50%, 0.4)`);
+                orbGlow.addColorStop(1, 'rgba(0,0,0,0)');
+
+                dataCtx.fillStyle = orbGlow;
+                dataCtx.beginPath();
+                dataCtx.arc(x, y, Math.max(2, orb.radius * 2.5), 0, Math.PI * 2);
+                dataCtx.fill();
+            });
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 3. LAYER 1: 10,000 SQUARED PERIMETER BARRIER GRID             */
+        /* ------------------------------------------------------------- */
+        const barrierGridCanvas = document.getElementById('barrierGridCanvas');
+        const barrierCtx = barrierGridCanvas.getContext('2d');
+
+        function renderBarrierGridLayer() {
+            barrierCtx.clearRect(0, 0, barrierGridCanvas.width, barrierGridCanvas.height);
+            const w = barrierGridCanvas.width;
+            const h = barrierGridCanvas.height;
+
+            const cols = 100;
+            const rows = 100;
+            const cellW = w / cols;
+            const cellH = h / rows;
+
+            barrierCtx.strokeStyle = 'rgba(0, 255, 204, 0.045)';
+            barrierCtx.lineWidth = 0.5;
+
+            for (let c = 0; c <= cols; c += 2) {
+                barrierCtx.beginPath();
+                barrierCtx.moveTo(c * cellW, 0);
+                barrierCtx.lineTo(c * cellW, h);
+                barrierCtx.stroke();
+            }
+
+            for (let r = 0; r <= rows; r += 2) {
+                barrierCtx.beginPath();
+                barrierCtx.moveTo(0, r * cellH);
+                barrierCtx.lineTo(w, r * cellH);
+                barrierCtx.stroke();
+            }
+
+            // Liquid RGB border indicators around 4 viewport corners
+            const cornerLen = Math.min(w, h) * 0.08;
+            const hueTime = (Date.now() * 0.05) % 360;
+            barrierCtx.strokeStyle = `hsl(${hueTime}, 100%, 60%)`;
+            barrierCtx.lineWidth = 3.5;
+
+            // Top-Left
+            barrierCtx.beginPath();
+            barrierCtx.moveTo(0, cornerLen);
+            barrierCtx.lineTo(0, 0);
+            barrierCtx.lineTo(cornerLen, 0);
+            barrierCtx.stroke();
+
+            // Top-Right
+            barrierCtx.beginPath();
+            barrierCtx.moveTo(w - cornerLen, 0);
+            barrierCtx.lineTo(w, 0);
+            barrierCtx.lineTo(w, cornerLen);
+            barrierCtx.stroke();
+
+            // Bottom-Left
+            barrierCtx.beginPath();
+            barrierCtx.moveTo(0, h - cornerLen);
+            barrierCtx.lineTo(0, h);
+            barrierCtx.lineTo(cornerLen, h);
+            barrierCtx.stroke();
+
+            // Bottom-Right
+            barrierCtx.beginPath();
+            barrierCtx.moveTo(w - cornerLen, h);
+            barrierCtx.lineTo(w, h);
+            barrierCtx.lineTo(w, h - cornerLen);
+            barrierCtx.stroke();
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 4. LAYER 2: HAMILTONIAN SINGULARITY PHYSICS ENGINE            */
+        /* ------------------------------------------------------------- */
+        const voidCanvas = document.getElementById('voidCanvas');
+        const voidCtx = voidCanvas.getContext('2d');
+
+        let simMode = 'leapfrog';
+        let epsilon = 0.0;
+        let dt = 0.10;
+        let mu = 15000;
+        let engineCrashed = false;
+
+        let state = { x: 180, y: 0, vx: 0, vy: 8.5 };
+        const pathHistory = [];
+        const maxHistory = 350;
+
+        const bgFieldGrid = [];
+        const numGridPointsX = 40;
+        const numGridPointsY = 28;
+
+        function initBackgroundField() {
+            bgFieldGrid.length = 0;
+            const stepX = window.innerWidth / numGridPointsX;
+            const stepY = window.innerHeight / numGridPointsY;
+            for (let i = 0; i <= numGridPointsX; i++) {
+                for (let j = 0; j <= numGridPointsY; j++) {
+                    bgFieldGrid.push({
+                        baseX: i * stepX,
+                        baseY: j * stepY,
+                        currentX: i * stepX,
+                        currentY: j * stepY
+                    });
+                }
+            }
+        }
+
+        function resizeViewport() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            [dataLayerCanvas, barrierGridCanvas, voidCanvas, torusCanvas].forEach(c => {
+                if (c) {
+                    c.width = w;
+                    c.height = h;
+                }
+            });
+
+            originX = w / 2;
+            originY = h / 2;
+            initBackgroundField();
+            initDataOrbs();
+            updateZoomDisplay();
+        }
+        window.addEventListener('resize', resizeViewport);
+        window.addEventListener('orientationchange', () => setTimeout(resizeViewport, 200));
+
+        function computeAcceleration(x, y) {
+            const rSq = x * x + y * y;
+            const softenedRadiusSq = rSq + (epsilon * epsilon);
+            const rMag = Math.sqrt(softenedRadiusSq);
+            if (rMag === 0) return { ax: NaN, ay: NaN, r: 0 };
+            const factor = -mu / (softenedRadiusSq * rMag);
+            return { ax: x * factor, ay: y * factor, r: Math.sqrt(rSq) };
+        }
+
+        function stepSimulation() {
+            if (engineCrashed) return;
+
+            if (simMode === 'euler') {
+                const accel = computeAcceleration(state.x, state.y);
+                if (isNaN(accel.ax) || isNaN(accel.ay) || isNaN(state.x) || isNaN(state.y)) {
+                    triggerEngineCrash();
+                    return;
+                }
+                state.x += state.vx * dt;
+                state.y += state.vy * dt;
+                state.vx += accel.ax * dt;
+                state.vy += accel.ay * dt;
+            } else {
+                let accel = computeAcceleration(state.x, state.y);
+                if (isNaN(accel.ax) || isNaN(accel.ay) || isNaN(state.x) || isNaN(state.y)) {
+                    triggerEngineCrash();
+                    return;
+                }
+                const vHalfX = state.vx + accel.ax * (dt / 2);
+                const vHalfY = state.vy + accel.ay * (dt / 2);
+                state.x += vHalfX * dt;
+                state.y += vHalfY * dt;
+
+                accel = computeAcceleration(state.x, state.y);
+                if (isNaN(accel.ax) || isNaN(accel.ay)) {
+                    triggerEngineCrash();
+                    return;
+                }
+                state.vx = vHalfX + accel.ax * (dt / 2);
+                state.vy = vHalfY + accel.ay * (dt / 2);
+            }
+
+            if (isNaN(state.vx) || isNaN(state.vy) || Math.abs(state.vx) === Infinity || Math.abs(state.vy) === Infinity) {
+                triggerEngineCrash();
+            }
+
+            pathHistory.push({ x: state.x, y: state.y });
+            if (pathHistory.length > maxHistory) pathHistory.shift();
+        }
+
+        function triggerEngineCrash() {
+            engineCrashed = true;
+            const badge = document.getElementById('p2-status-badge');
+            if (badge) {
+                badge.className = "bg-rose-950 text-rose-400 border border-rose-800 px-1.5 py-0.2 rounded font-bold animate-pulse";
+                badge.innerText = "CRASH (NaN)";
+            }
+        }
+
+        function computeHamiltonianMetrics() {
+            const r = Math.sqrt(state.x * state.x + state.y * state.y);
+            const softenedR = Math.sqrt(state.x * state.x + state.y * state.y + epsilon * epsilon);
+            const vSq = state.vx * state.vx + state.vy * state.vy;
+
+            const kinetic = 0.5 * vSq;
+            const potential = -mu / (softenedR === 0 ? 0.0001 : softenedR);
+            const totalH = kinetic + potential;
+
+            const diagR = document.getElementById('diag-r');
+            const diagEnergy = document.getElementById('diag-energy');
+            const diagVel = document.getElementById('diag-vel');
+
+            if (diagR) diagR.innerText = r.toFixed(2);
+            if (diagEnergy) diagEnergy.innerText = totalH.toFixed(2);
+            if (diagVel) diagVel.innerText = `[${state.vx.toFixed(1)}, ${state.vy.toFixed(1)}]`;
+        }
+
+        function updateBackgroundFieldMatrix() {
+            const viewScale = getResponsiveViewportScale();
+            for (let pt of bgFieldGrid) {
+                const dx = pt.baseX - originX;
+                const dy = pt.baseY - originY;
+                const distSq = dx * dx + dy * dy;
+
+                const gravityScaling = mu * 1.8 * viewScale;
+                const fieldSoftening = 2500 + (epsilon * epsilon * 15);
+                const shiftMagnitude = gravityScaling / (distSq + fieldSoftening);
+
+                pt.currentX = pt.baseX - dx * shiftMagnitude;
+                pt.currentY = pt.baseY - dy * shiftMagnitude;
+            }
+        }
+
+        function renderVoidScene() {
+            voidCtx.fillStyle = 'rgba(3, 4, 12, 0.25)';
+            voidCtx.fillRect(0, 0, voidCanvas.width, voidCanvas.height);
+
+            updateBackgroundFieldMatrix();
+            const viewScale = getResponsiveViewportScale();
+
+            voidCtx.strokeStyle = 'rgba(0, 255, 204, 0.05)';
+            voidCtx.lineWidth = 1;
+
+            for (let i = 0; i <= numGridPointsX; i++) {
+                voidCtx.beginPath();
+                for (let j = 0; j <= numGridPointsY; j++) {
+                    const idx = i * (numGridPointsY + 1) + j;
+                    if (bgFieldGrid[idx]) {
+                        if (j === 0) voidCtx.moveTo(bgFieldGrid[idx].currentX, bgFieldGrid[idx].currentY);
+                        else voidCtx.lineTo(bgFieldGrid[idx].currentX, bgFieldGrid[idx].currentY);
+                    }
+                }
+                voidCtx.stroke();
+            }
+
+            for (let j = 0; j <= numGridPointsY; j++) {
+                voidCtx.beginPath();
+                for (let i = 0; i <= numGridPointsX; i++) {
+                    const idx = i * (numGridPointsX + 1) + j;
+                    if (bgFieldGrid[idx]) {
+                        if (i === 0) voidCtx.moveTo(bgFieldGrid[idx].currentX, bgFieldGrid[idx].currentY);
+                        else voidCtx.lineTo(bgFieldGrid[idx].currentX, bgFieldGrid[idx].currentY);
+                    }
+                }
+                voidCtx.stroke();
+            }
+
+            // Central Attractor Singularity Well
+            const radialPulse = (8 + Math.sin(Date.now() * 0.005) * 2) * viewScale;
+            const coreGlow = voidCtx.createRadialGradient(originX, originY, 1, originX, originY, Math.max(2, radialPulse * 3.5));
+            coreGlow.addColorStop(0, '#ffffff');
+            coreGlow.addColorStop(0.2, 'rgba(0, 255, 204, 0.85)');
+            coreGlow.addColorStop(0.6, 'rgba(255, 0, 119, 0.25)');
+            coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+
+            voidCtx.fillStyle = coreGlow;
+            voidCtx.beginPath();
+            voidCtx.arc(originX, originY, Math.max(2, radialPulse * 3.5), 0, Math.PI * 2);
+            voidCtx.fill();
+
+            if (epsilon > 0) {
+                voidCtx.strokeStyle = 'rgba(0, 255, 204, 0.2)';
+                voidCtx.lineWidth = 1;
+                voidCtx.setLineDash([4, 4]);
+                voidCtx.beginPath();
+                voidCtx.arc(originX, originY, epsilon * viewScale, 0, Math.PI * 2);
+                voidCtx.stroke();
+                voidCtx.setLineDash([]);
+            }
+
+            // Scaled Orbit Trajectory Path
+            if (pathHistory.length > 1) {
+                voidCtx.beginPath();
+                voidCtx.moveTo(pathHistory[0].x * viewScale + originX, pathHistory[0].y * viewScale + originY);
+                for (let i = 1; i < pathHistory.length; i++) {
+                    voidCtx.lineTo(pathHistory[i].x * viewScale + originX, pathHistory[i].y * viewScale + originY);
+                }
+                voidCtx.strokeStyle = simMode === 'leapfrog' ? 'rgba(0, 255, 204, 0.65)' : 'rgba(255, 0, 119, 0.65)';
+                voidCtx.lineWidth = Math.max(1, 2 * viewScale);
+                voidCtx.stroke();
+            }
+
+            if (!engineCrashed) {
+                voidCtx.fillStyle = '#ffffff';
+                voidCtx.shadowColor = simMode === 'leapfrog' ? '#00ffcc' : '#ff0077';
+                voidCtx.shadowBlur = 12 * viewScale;
+                voidCtx.beginPath();
+                voidCtx.arc(state.x * viewScale + originX, state.y * viewScale + originY, Math.max(2, 5 * viewScale), 0, Math.PI * 2);
+                voidCtx.fill();
+                voidCtx.shadowBlur = 0;
+            } else {
+                voidCtx.fillStyle = '#ff0055';
+                voidCtx.font = 'bold 12px monospace';
+                voidCtx.fillText('⚡ SINGULARITY COLLAPSE CRASH', state.x * viewScale + originX + 10, state.y * viewScale + originY + 4);
+            }
+        }
+
+        function resetVectorState() {
+            state.x = 180;
+            state.y = 0;
+            state.vx = 0;
+            state.vy = Math.sqrt(mu / 180);
+            pathHistory.length = 0;
+            engineCrashed = false;
+            const badge = document.getElementById('p2-status-badge');
+            if (badge) {
+                badge.className = "bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded font-bold";
+                badge.innerText = "RESTABILIZED";
+            }
+        }
+
+        function forceDirectSingularityRun() {
+            state.x = 220;
+            state.y = 120;
+            const angle = Math.atan2(-state.y, -state.x);
+            const speed = 6.0;
+            state.vx = Math.cos(angle) * speed;
+            state.vy = Math.sin(angle) * speed;
+            pathHistory.length = 0;
+            engineCrashed = false;
+        }
+
+        function setSimMode(m) {
+            simMode = m;
+            document.getElementById('btn-euler').className = m === 'euler' ? 'py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 font-bold transition' : 'py-1 rounded text-slate-400 hover:text-white transition';
+            document.getElementById('btn-leapfrog').className = m === 'leapfrog' ? 'py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-700 font-bold transition' : 'py-1 rounded text-slate-400 hover:text-white transition';
+        }
+
+        function updateSoftening(v) { epsilon = parseFloat(v); document.getElementById('val-softening').innerText = epsilon.toFixed(2); }
+        function updateDt(v) { dt = parseFloat(v); document.getElementById('val-dt').innerText = dt.toFixed(2); }
+        function updateMass(v) { mu = parseInt(v); document.getElementById('val-mass').innerText = mu; }
+
+        /* ------------------------------------------------------------- */
+        /* 5. AUTOMATED RESTABILIZER ENGINE                              */
+        /* ------------------------------------------------------------- */
+        let restabilizeStep = 0;
+
+        function updateAutoRestabilizer() {
+            if (!autoRestabilizeActive) return;
+
+            restabilizeStep += 0.02;
+            if (engineCrashed) {
+                resetVectorState();
+            }
+
+            const targetSoftening = Math.min(25, Math.abs(Math.sin(restabilizeStep * 0.5) * 12) + (sensorFlux * 2));
+            epsilon = targetSoftening;
+            document.getElementById('slider-softening').value = epsilon;
+            document.getElementById('val-softening').innerText = epsilon.toFixed(2);
+
+            const targetDt = 0.08 + Math.abs(Math.cos(restabilizeStep * 0.3) * 0.04);
+            dt = targetDt;
+            document.getElementById('slider-dt').value = dt;
+            document.getElementById('val-dt').innerText = dt.toFixed(2);
+        }
+
+        function toggleAutoRestabilize() {
+            autoRestabilizeActive = !autoRestabilizeActive;
+            const btn = document.getElementById('btn-auto-restabilize');
+            const dot = document.getElementById('auto-restabilize-dot');
+
+            if (autoRestabilizeActive) {
+                btn.className = "px-2 py-0.5 bg-cyan-950 border border-cyan-500/50 hover:bg-cyan-900 text-cyan-300 text-[10px] font-mono rounded-lg transition flex items-center gap-1";
+                dot.className = "inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                btn.querySelector('span:last-child').innerText = "AUTO-STABILIZE: ON";
+            } else {
+                btn.className = "px-2 py-0.5 bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-400 text-[10px] font-mono rounded-lg transition flex items-center gap-1";
+                dot.className = "inline-block w-2 h-2 rounded-full bg-slate-500";
+                btn.querySelector('span:last-child').innerText = "AUTO-STABILIZE: OFF";
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 6. LAYER 3: 6D TORUS KNOT & ATOM ANCHOR CORE (0,0,0)          */
+        /* ------------------------------------------------------------- */
+        const torusCanvas = document.getElementById('torusCanvas');
+        const torusCtx = torusCanvas ? torusCanvas.getContext('2d') : null;
+        let rotationAngle = 0;
+
+        function drawCenteredTorusKnot() {
+            if (!torusCtx) return;
+            torusCtx.clearRect(0, 0, torusCanvas.width, torusCanvas.height);
+
+            const viewScale = getResponsiveViewportScale();
+            rotationAngle += 0.012;
+            torusCtx.save();
+            torusCtx.translate(originX, originY);
+
+            // Pulsating atomic nucleus anchor core
+            if (isAnchorHolding) {
+                atomCoalesceFactor = Math.min(1.0, atomCoalesceFactor + 0.04);
+            } else {
+                atomCoalesceFactor = Math.max(0.0, atomCoalesceFactor - 0.04);
+            }
+
+            const atomPulse = ((12 + Math.sin(Date.now() * 0.01) * 4) * (1 + atomCoalesceFactor * 1.5)) * viewScale;
+            const atomGlow = torusCtx.createRadialGradient(0, 0, 1, 0, 0, Math.max(2, atomPulse * 2.5));
+            atomGlow.addColorStop(0, '#ffffff');
+            atomGlow.addColorStop(0.4, 'rgba(255, 0, 119, 0.9)');
+            atomGlow.addColorStop(0.8, 'rgba(0, 255, 204, 0.5)');
+            atomGlow.addColorStop(1, 'rgba(0,0,0,0)');
+
+            torusCtx.fillStyle = atomGlow;
+            torusCtx.beginPath();
+            torusCtx.arc(0, 0, Math.max(2, atomPulse * 2.5), 0, Math.PI * 2);
+            torusCtx.fill();
+
+            // 6D Torus Shell Trajectories
+            torusCtx.rotate(rotationAngle * 0.15);
+            let pointsCount = 140;
+            torusCtx.lineWidth = Math.max(0.8, 1.4 * viewScale);
+
+            for (let i = 0; i < pointsCount; i++) {
+                let theta = (i / pointsCount) * Math.PI * 2;
+                let r = (2.0 + Math.sin(theta * 3.0 + rotationAngle)) * (32 * viewScale);
+                let x = r * Math.cos(theta * 2.0);
+                let y = r * Math.sin(theta * 2.0);
+
+                torusCtx.beginPath();
+                torusCtx.strokeStyle = i % 2 === 0 ? `rgba(0, 255, 204, ${0.12 + Math.sin(theta + rotationAngle)*0.25})` : `rgba(185, 0, 255, ${0.12 + Math.cos(theta - rotationAngle)*0.25})`;
+                torusCtx.arc(x, y, Math.max(1, Math.abs(Math.sin(rotationAngle + theta) * (6 * viewScale))), 0, Math.PI * 2);
+                torusCtx.stroke();
+            }
+            torusCtx.restore();
+        }
+
+        // Anchor Core Interaction
+        if (torusCanvas) {
+            torusCanvas.addEventListener('mousedown', (e) => {
+                const dx = e.clientX - originX;
+                const dy = e.clientY - originY;
+                const hitRadius = 60 * getResponsiveViewportScale();
+                if (Math.sqrt(dx * dx + dy * dy) < hitRadius) {
+                    isAnchorHolding = true;
+                }
+            });
+
+            torusCanvas.addEventListener('mouseup', () => { isAnchorHolding = false; });
+            torusCanvas.addEventListener('mouseleave', () => { isAnchorHolding = false; });
+
+            torusCanvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    const dx = e.touches[0].clientX - originX;
+                    const dy = e.touches[0].clientY - originY;
+                    const hitRadius = 60 * getResponsiveViewportScale();
+                    if (Math.sqrt(dx * dx + dy * dy) < hitRadius) {
+                        isAnchorHolding = true;
+                    }
+                }
+            }, { passive: true });
+
+            torusCanvas.addEventListener('touchend', () => { isAnchorHolding = false; });
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 7. PANEL 4: OMNINEXUS 4-QUADRANT RAID MATRIX                  */
+        /* ------------------------------------------------------------- */
+        const NUM_DIMENSIONS = 200;
+        let tensorState = Array.from({length: NUM_DIMENSIONS}, () => Math.random());
+
+        function initTensorGrid() {
+            const grid = document.getElementById('tensor-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            for (let i = 0; i < NUM_DIMENSIONS; i++) {
+                const dot = document.createElement('div');
+                dot.id = `tensor-cell-${i}`;
+                dot.className = 'w-full h-full bg-cyan-950 border border-cyan-900/30 rounded-sm transition-colors duration-200 cursor-pointer hover:border-cyan-400';
+                dot.onclick = () => openNodeInspector(DIRECTORY_NODES[i % DIRECTORY_NODES.length]);
+                grid.appendChild(dot);
+            }
+        }
+
+        function updateTensorGrid() {
+            let activeCount = 0;
+            for (let i = 0; i < NUM_DIMENSIONS; i++) {
+                tensorState[i] = (tensorState[i] + (Math.random() - 0.48) * 0.1 + 1.0) % 1.0;
+                const cell = document.getElementById(`tensor-cell-${i}`);
+                if (cell) {
+                    if (tensorState[i] > 0.8) {
+                        cell.style.backgroundColor = '#ff0077';
+                        activeCount++;
+                    } else if (tensorState[i] > 0.4) {
+                        cell.style.backgroundColor = '#b900ff';
+                    } else {
+                        cell.style.backgroundColor = '#061826';
+                    }
+                }
+            }
+            const avgEl = document.getElementById('p4-grid-avg');
+            if (avgEl) avgEl.innerText = `RAID AVG: ${(activeCount / NUM_DIMENSIONS * 100).toFixed(1)}%`;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 8. PANEL 3: COGNITOFORGE MULTI-AI DIALECTIC GENERATOR         */
+        /* ------------------------------------------------------------- */
+        const AGENTS = [
+            { name: "Gemini Pro", color: "text-cyan-400", bg: "bg-cyan-950/40", border: "border-cyan-500/40" },
+            { name: "Cognito Q", color: "text-purple-400", bg: "bg-purple-950/40", border: "border-purple-500/40" },
+            { name: "OmniNexus Arbiter", color: "text-emerald-400", bg: "bg-emerald-950/40", border: "border-emerald-500/40" }
+        ];
+
+        const DEBATE_MESSAGES = [
+            "Data Layer 0 Ethernet Nexus stream locked at anchor [0,0,0]. Atom coalescence active.",
+            "Layer 1 10,000 squared cell barrier grid stretched flush with liquid RGB hue border.",
+            "RAID Quadrants 1..4 synchronized across shorthanded Base64 transport channel ':|.l''.",
+            "Data Tunnel active: streaming bottom terminal commands to core origin.",
+            "Localhost PNA preflight header validated: Access-Control-Allow-Private-Network=true.",
+            "Cross-tab BroadcastChannel 'manifold_mesh_bus' listening for synchronized load shifts."
+        ];
+
+        let debateIdx = 0;
+        let debateTick = 1;
+
+        function generateDialecticTurnHtml() {
+            const agent = AGENTS[debateIdx % AGENTS.length];
+            const msg = DEBATE_MESSAGES[debateIdx % DEBATE_MESSAGES.length];
+            const time = new Date().toLocaleTimeString();
+
+            debateIdx++;
+            debateTick++;
+            const tEl = document.getElementById('p3-tick-count');
+            if (tEl) tEl.innerText = debateTick;
+
+            return `
+                <div class="p-2 rounded-lg border ${agent.border} ${agent.bg} space-y-1">
+                    <div class="flex justify-between items-center text-[9px] font-mono">
+                        <span class="${agent.color} font-bold">${agent.name}</span>
+                        <span class="text-slate-500">${time}</span>
+                    </div>
+                    <div class="text-slate-200 text-[11px] font-sans">${msg}</div>
+                </div>
+            `;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 9. BOTTOM TERMINAL & DATA TUNNEL PIPELINE                     */
+        /* ------------------------------------------------------------- */
+        let isTerminalExpanded = false;
+
+        function toggleTerminalExpansion() {
+            isTerminalExpanded = !isTerminalExpanded;
+            const term = document.getElementById('bottom-terminal');
+            const icon = document.getElementById('term-expand-icon');
+            const tag = document.getElementById('term-status-tag');
+
+            if (isTerminalExpanded) {
+                term.classList.add('expanded');
+                icon.innerText = '▼ CLICK TO HIDE';
+                tag.innerText = 'STATE: EXPANDED';
+            } else {
+                term.classList.remove('expanded');
+                icon.innerText = '▲ CLICK TO EXPAND';
+                tag.innerText = 'STATE: PEAKING';
+            }
+        }
+
+        function processVirtualTerminalCommand(text) {
+            if (!text) return "";
+            triggerCoreCoalescePulse();
+
+            let outputHtml = `<div class="text-amber-400 font-bold">$+ ${escapeHtml(text)}</div>`;
+
+            if (text.startsWith("AI:") || text.startsWith("GEMINI:")) {
+                const prompt = text.replace(/^(AI:|GEMINI:)/i, "").trim();
+                outputHtml += `<div class="text-cyan-300 italic">[ENCLAVE MESH] Dispatching request to Gemini cluster...</div>`;
+                // Asynchronous non-blocking dispatch
+                callGeminiApiWithRetry(prompt).then((responseText) => {
+                    const stream = document.getElementById('term-output-stream');
+                    if (stream) {
+                        const div = document.createElement('div');
+                        div.className = "text-emerald-400";
+                        div.innerText = `[RESPONSE] ${responseText}`;
+                        stream.appendChild(div);
+                        stream.scrollTop = stream.scrollHeight;
+                    }
+                });
+            } else if (text === "probe" || text === "lan" || text === "proxy") {
+                outputHtml += `
+                    <div class="text-purple-300">
+                        [LAN PROXY PROBE]<br>
+                        - Loopback Socket: http://localhost:8080 (PNA header required)<br>
+                        - Ollama Daemon: http://localhost:11434 (OLLAMA_ORIGINS="*")<br>
+                        - Browser Sandbox Egress: HTTP/WS/WebRTC socket bridge ready.
+                    </div>
+                `;
+            } else if (text === "pwa" || text === "apk") {
+                outputHtml += `
+                    <div class="text-emerald-300">
+                        [PWA / ANDROID STATUS]<br>
+                        - Web App Manifest: Active base64 URI (standalone mode)<br>
+                        - Native Packaging: Use Cloud CI/CD (GitHub Actions + Capacitor) for .apk binary.
+                    </div>
+                `;
+            } else if (text === "help") {
+                outputHtml += `
+                    <div class="text-slate-400">
+                        [AVAILABLE COMMANDS]<br>
+                        - probe: Test LAN proxy and loopback egress configuration.<br>
+                        - pwa: Display Android mobile installation and WebAPK parameters.<br>
+                        - ai: [prompt]: Query the live Gemini generative model.<br>
+                        - :|.l': Dispatch single-width Base64 shorthand telemetry marker.<br>
+                        - clear: Wipe terminal log feed.
+                    </div>
+                `;
+            } else if (text === "clear") {
+                setTimeout(() => {
+                    document.getElementById('term-output-stream').innerHTML = '<div class="text-cyan-400">[TERMINAL CLEARED] Direct data pipe active.</div>';
+                }, 100);
+                return "";
+            } else {
+                outputHtml += `<div class="text-slate-400">[TUNNEL ACK] Command piped to anchor (0,0,0) &amp; grid cells. Shorthand parity ok.</div>`;
+            }
+
+            return outputHtml;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 10. NODE DATA INSPECTOR MODAL ENGINE                          */
+        /* ------------------------------------------------------------- */
+        function openNodeInspector(nodeMeta) {
+            document.getElementById('node-modal-title').innerText = `INSPECT: ${nodeMeta.desc.toUpperCase()}`;
+            document.getElementById('node-modal-path').innerText = nodeMeta.path;
+            document.getElementById('node-modal-url').innerText = nodeMeta.url;
+            document.getElementById('node-modal-iframe').src = nodeMeta.url;
+            document.getElementById('node-inspector-modal').classList.remove('hidden');
+        }
+
+        function closeNodeInspector() {
+            document.getElementById('node-inspector-modal').classList.add('hidden');
+            document.getElementById('node-modal-iframe').src = 'about:blank';
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 11. UI DOCKING & CLEAR HUD TOGGLE                             */
+        /* ------------------------------------------------------------- */
+        let isUIVisible = true;
+
+        function toggleClearUIVisibility() {
+            isUIVisible = !isUIVisible;
+            const container = document.getElementById('surround-ui-container');
+            const term = document.getElementById('bottom-terminal');
+            if (container) {
+                if (isUIVisible) {
+                    container.classList.remove('hud-hidden');
+                    if (term) term.style.opacity = "1";
+                } else {
+                    container.classList.add('hud-hidden');
+                    if (term) term.style.opacity = "0";
+                }
+            }
+        }
+
+        function setDockingMode(mode) {
+            const container = document.getElementById('surround-ui-container');
+            if (!container) return;
+            container.classList.remove('dock-left', 'dock-right');
+
+            ['surround', 'left', 'right'].forEach(m => {
+                const btn = document.getElementById(`dock-btn-${m}`);
+                if (btn) {
+                    btn.className = m === mode ? "px-2 py-0.5 rounded transition bg-cyan-500 text-slate-950 font-bold" : "px-2 py-0.5 rounded transition text-slate-400 hover:text-white";
+                }
+            });
+
+            if (mode === 'left') container.classList.add('dock-left');
+            if (mode === 'right') container.classList.add('dock-right');
+        }
+
+        function focusPanel(panelId) {
+            const p = document.getElementById(`panel-${panelId}`);
+            if (p) {
+                p.classList.add('ring-2', 'ring-cyan-400');
+                setTimeout(() => p.classList.remove('ring-2', 'ring-cyan-400'), 1200);
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 12. STANDALONE QUINE ASSIMILATION & EXPORT ENGINE             */
+        /* ------------------------------------------------------------- */
+        function assimilateAndExportQuine() {
+            try {
+                const docCopy = document.documentElement.cloneNode(true);
+                const docString = "<!DOCTYPE html>\n" + docCopy.outerHTML;
+
+                const blob = new Blob([docString], { type: "text/html;charset=utf-8" });
+                const blobUrl = URL.createObjectURL(blob);
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                const fileName = `GeminiNexus_Zenith_Quine_${timestamp}.html`;
+
+                const a = document.createElement("a");
+                a.href = blobUrl;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(blobUrl);
+
+                const stream = document.getElementById('term-output-stream');
+                if (stream) {
+                    const line = document.createElement('div');
+                    line.className = "text-amber-400 font-bold";
+                    line.innerText = `[QUINE ASSIMILATION] Autonomous snapshot exported as: ${fileName}`;
+                    stream.appendChild(line);
+                    stream.scrollTop = stream.scrollHeight;
+                }
+            } catch (err) {
+                console.error("Quine export failure:", err);
+            }
+        }
+
+        /* ------------------------------------------------------------- */
+        /* 13. MASTER ANIMATION LOOP & BOOTSTRAP                         */
+        /* ------------------------------------------------------------- */
+        function masterAnimationLoop() {
+            renderDataLayer();
+            renderBarrierGridLayer();
+
+            for (let i = 0; i < 3; i++) {
+                stepSimulation();
+            }
+            updateAutoRestabilizer();
+            computeHamiltonianMetrics();
+            renderVoidScene();
+            drawCenteredTorusKnot();
+
+            requestAnimationFrame(masterAnimationLoop);
+        }
+
+        window.onload = function() {
+            resizeViewport();
+            resetVectorState();
+            initTensorGrid();
+            refreshAllHeaderThumbnails();
+
+            setInterval(updateTensorGrid, 200);
+            setInterval(refreshAllHeaderThumbnails, 1800);
+
+            // Cross-tab broadcast mesh listener
+            if (typeof BroadcastChannel !== 'undefined') {
+                const meshBus = new BroadcastChannel('manifold_mesh_bus');
+                meshBus.onmessage = (e) => {
+                    if (e.data && e.data.action === 'SYNC_ENGINE_LOAD_STATE') {
+                        triggerCoreCoalescePulse();
+                    }
+                };
+            }
+
+            requestAnimationFrame(masterAnimationLoop);
+        };
+    </script>
+<script src="./cryptic-bridge-client.js"></script>
+<script src="./peer-mesh.js"></script>
+</body>
+</html>
