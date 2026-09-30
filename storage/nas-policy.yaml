@@ -1,0 +1,34 @@
+version: 0.1
+policy_id: storage:federated-nas
+mode: declared-not-applied
+default_allocation_percent: 10
+rules:
+  - allocation_requires_explicit_device_enrollment
+  - never_allocate_from_system_or-recovery-partitions
+  - never_format_or-repartition-automatically
+  - mount-read-only-before-first-inventory
+  - encrypt-at-rest-where-supported
+  - maintain-local-quota
+  - retain-device-local-reserve
+  - content-address-large-objects-by-sha256
+  - git-stores-manifests-not-large-binaries
+tiers:
+  canonical:
+    purpose: normalized manifests and lineage indexes
+  archive:
+    purpose: immutable source exports and recovery images
+  cache:
+    purpose: reproducible derivatives and generated artifacts
+  telemetry:
+    purpose: rolling local metrics with summarized Git receipts
+providers:
+  - github
+  - google-drive
+  - onedrive
+  - icloud
+  - local-device-storage
+sync_strategy:
+  metadata: bidirectional-with-conflict-detection
+  canonical_source_documents: append-only-ingest
+  generated_derivatives: reproducible
+  deletions: never-propagate-without-explicit-approval

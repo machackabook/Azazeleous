@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/source-record.schema.json",
+  "title": "Lineage Source Record",
+  "type": "object",
+  "required": [
+    "record_id",
+    "source_provider",
+    "ingestion_timestamp",
+    "sha256",
+    "mime_type",
+    "verification_state",
+    "publication_state"
+  ],
+  "properties": {
+    "record_id": {"type": "string"},
+    "parent_record_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "entity_refs": {"type": "array", "items": {"type": "string", "pattern": "^entity:"}},
+    "source_provider": {"type": "string"},
+    "source_account_ref": {"type": ["string", "null"]},
+    "source_path_ref": {"type": ["string", "null"]},
+    "original_timestamp": {"type": ["string", "null"]},
+    "ingestion_timestamp": {"type": "string"},
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "mime_type": {"type": "string"},
+    "transformation": {"type": ["string", "null"]},
+    "verification_state": {"enum": ["unverified", "hash-verified", "reviewed"]},
+    "publication_state": {"enum": ["private", "candidate", "public"]}
+  },
+  "additionalProperties": false
+}

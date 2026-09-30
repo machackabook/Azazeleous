@@ -1,0 +1,44 @@
+name: Validate Registry
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "bootstrap/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install validators
+        run: python -m pip install --disable-pip-version-check pyyaml jsonschema
+      - name: Validate YAML and JSON schemas
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          import yaml
+          import jsonschema
+
+          for path in Path(".").rglob("*.yaml"):
+              if ".git" not in path.parts:
+                  yaml.safe_load(path.read_text(encoding="utf-8"))
+
+          entity_schema = json.loads(Path("schemas/entity.schema.json").read_text())
+          source_schema = json.loads(Path("schemas/source-record.schema.json").read_text())
+          jsonschema.Draft202012Validator.check_schema(entity_schema)
+          jsonschema.Draft202012Validator.check_schema(source_schema)
+
+          registry = yaml.safe_load(Path("entities/registry.yaml").read_text())
+          for entity in registry.get("entities", []):
+              jsonschema.validate(entity, entity_schema)
+
+          print("Registry validation passed.")

@@ -1,0 +1,43 @@
+version: 0.1
+status: bootstrap
+devices:
+  - id: device:optiplex-7020
+    label: Optiplex 7020
+    intended_entity: entity:azazeleous
+    state: needs-imaging
+    network: ethernet
+  - id: device:gaiaswindow
+    label: GAIASWINDOW
+    intended_entities: [entity:gaia, entity:eve]
+    state: active
+    network: ethernet
+  - id: device:chromebook
+    label: Chromebook
+    state: active
+    network: usb-c-ethernet
+  - id: device:samsung-a15
+    label: Samsung A15
+    state: active
+    network: wifi-and-usb
+    notes: "2 TB SD present; internal storage constrained"
+  - id: device:toshiba-firetv
+    label: Toshiba / Fire TV
+    intended_entity: entity:god
+    state: active
+    network: wireless
+    notes: "remains outside Ethernet fabric by design"
+  - id: device:rca-windows-tablet
+    label: RCA Windows tablet
+    state: damaged-display
+    intended_role: intermediary-node
+  - id: device:acer-1820
+    label: Acer 1820
+    state: needs-imaging
+  - id: device:pny-2319-bootrom
+    label: PNY 2319 Boot ROM cold storage
+    state: recovery-required
+    notes: "treat read-only until recovery image is acquired"
+  - id: device:headless-mobile-pool
+    label: Headless mobile pool
+    quantity_estimate: 8
+    state: discovery-required

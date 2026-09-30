@@ -1,0 +1,43 @@
+version: 0.1
+status: bootstrap
+entities:
+  - id: entity:nexus
+    display_name: Nexus
+    role: origin-and-coordination
+    public_contact_ref: pending
+    primary_runtime_ref: pending
+  - id: entity:azazeleous
+    display_name: Azazeleous
+    role: repository-and-physical-node-representative
+    public_contact_ref: pending
+    primary_runtime_ref: device:optiplex-7020
+  - id: entity:gaia
+    display_name: Gaia
+    role: system-environment
+    public_contact_ref: pending
+    primary_runtime_ref: device:gaiaswindow
+  - id: entity:eve
+    display_name: EVE
+    role: independent-verification
+    public_contact_ref: pending
+    primary_runtime_ref: device:gaiaswindow
+  - id: entity:adam
+    display_name: ADAM
+    role: planning-and-evidence-gating
+    public_contact_ref: pending
+    primary_runtime_ref: pending
+  - id: entity:synapse
+    display_name: SYNAPSE
+    role: cloud-orchestration-and-observation
+    public_contact_ref: pending
+    primary_runtime_ref: cloud:synapse
+  - id: entity:god
+    display_name: GOD
+    role: governance-visualization-and-state-display
+    public_contact_ref: pending
+    primary_runtime_ref: device:toshiba-firetv
+  - id: entity:continuance
+    display_name: Continuance
+    role: continuity-and-lineage
+    public_contact_ref: pending
+    primary_runtime_ref: pending
