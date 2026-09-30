@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://void.invalid/schemas/particle.schema.json",
+  "title": "VOID Particle Orb",
+  "type": "object",
+  "required": ["particle_id","name","origin_anchor","runtime_class","orb","lineage"],
+  "properties": {
+    "particle_id": {"type":"string","pattern":"^void://particle/"},
+    "source_ref": {"type":["string","null"]},
+    "name": {"type":"string","minLength":1},
+    "slug": {"type":"string"},
+    "mime_type": {"type":"string"},
+    "size_bytes": {"type":["integer","null"],"minimum":0},
+    "source_kind": {"type":"string"},
+    "origin_anchor": {"const":"NEXUS://0.0.0"},
+    "visibility": {"enum":["private","candidate","public"]},
+    "original_policy": {"type":"string"},
+    "code_state": {"type":"string"},
+    "content_sha256": {"type":["string","null"],"pattern":"^[A-Fa-f0-9]{64}$"},
+    "quine_state": {"type":"string"},
+    "runtime_class": {"type":"string"},
+    "orb": {
+      "type":"object",
+      "required":["seed_u32","ring","theta","radius","z"],
+      "properties":{
+        "seed_u32":{"type":"integer","minimum":0},
+        "ring":{"type":"integer","minimum":0},
+        "theta":{"type":"number"},
+        "radius":{"type":"number","minimum":0},
+        "z":{"type":"number"}
+      },
+      "additionalProperties":false
+    },
+    "lineage": {
+      "type":"object",
+      "required":["parent_particle_ids","derived_particle_ids","chronology_state"],
+      "properties":{
+        "parent_particle_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+        "derived_particle_ids":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+        "chronology_state":{"type":"string"}
+      },
+      "additionalProperties":false
+    }
+  },
+  "additionalProperties":true
+}
