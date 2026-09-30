@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Core Engine Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;500;800&display=swap');
+        body { background-color: #050505; color: #00ffcc; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+        .glass-panel { background: rgba(0, 20, 20, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #000; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #00ffcc40; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
+        
+        /* Protocol Themes */
+        body[data-theme="uniomni"] { --accent: #00ffcc; }
+        body[data-theme="omniuni"] { --accent: #ff3366; }
+        body[data-theme="uni"] { --accent: #ffcc00; }
+        body[data-theme="omni"] { --accent: #b026ff; }
+
+
+        .theme-text { color: var(--accent); }
+        .theme-border { border-color: var(--accent); }
+        .theme-bg { background-color: var(--accent); }
+        .theme-glow { box-shadow: 0 0 15px var(--accent); }
+        
+        textarea { tab-size: 2; }
+    </style>
+</head>
+<body data-theme="uniomni" class="flex flex-col h-screen transition-colors duration-500">
+
+
+    <!-- Unified Address Bar (The Protocol Router) -->
+    <header class="h-14 border-b theme-border bg-black/80 flex items-center px-4 gap-4 z-20 shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+        </div>
+        
+        <div class="flex-1 flex items-center relative">
+            <select id="protocol-selector" class="appearance-none bg-transparent theme-text font-bold outline-none pr-2 z-10 cursor-pointer text-lg">
+                <option value="uniomni">uniomni://</option>
+                <option value="omniuni">omniuni://</option>
+                <option value="uni">uni://</option>
+                <option value="omni">omni://</option>
+            </select>
+            <input type="text" id="url-bar" value="sphynx/data_viewer.jsx" class="flex-1 bg-transparent text-gray-300 outline-none w-full border-b border-transparent focus:border-gray-600 pl-1 font-mono" spellcheck="false">
+        </div>
+
+
+        <div class="flex gap-3">
+            <button id="btn-compile" class="px-4 py-1 text-black font-bold text-sm rounded theme-bg hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg theme-glow">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132A1 1 0 0014.752 11.168z" /></svg>
+                INJECT & RENDER
+            </button>
+        </div>
+    </header>
+
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Pane: Code Editor -->
+        <div class="w-1/2 border-r theme-border flex flex-col glass-panel z-10 relative">
+            <div class="h-8 bg-black/60 border-b theme-border flex items-center justify-between px-4 text-xs font-bold text-gray-400">
+                <span>SPHYNX_INJECTOR [JSX/React]</span>
+                <span id="save-status" class="text-green-400 opacity-0 transition-opacity">Saved to Persistent Memory</span>
+            </div>
+            <textarea id="code-editor" class="flex-1 w-full bg-transparent text-gray-300 p-4 outline-none resize-none custom-scrollbar font-mono text-sm leading-relaxed" placeholder="Paste Data-Viewer React/JSX container code here...&#10;&#10;Drag & Drop is supported.&#10;Code is auto-saved to your persistent browser memory."></textarea>
+        </div>
+
+
+        <!-- Right Pane: Live Renderer -->
+        <div class="w-1/2 bg-[#0a0a0c] relative overflow-hidden flex flex-col" id="render-container">
+            <div class="h-8 bg-black/60 border-b theme-border flex items-center px-4 text-xs font-bold text-gray-400 shrink-0">
+                LIVE_CONTAINER_VIEW
+            </div>
+            
+            <div class="flex-1 overflow-auto custom-scrollbar relative p-2">
+                <!-- React mounts here -->
+                <div id="root" class="w-full min-h-full"></div>
+            </div>
+            
+            <!-- Error Overlay -->
+            <div id="error-overlay" class="absolute bottom-0 left-0 w-full bg-red-900/90 text-white p-4 font-mono text-xs hidden flex-col max-h-48 overflow-y-auto z-50 border-t border-red-500">
+                <span class="font-bold text-red-300 mb-1">COMPILATION_FAULT</span>
+                <pre id="error-output" class="whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </main>
+
+
+    <script>
+        const editor = document.getElementById('code-editor');
+        const rootNode = document.getElementById('root');
+         const compileBtn = document.getElementById('btn-compile');
+        const themeSelector = document.getElementById('protocol-selector');
+        const errorOverlay = document.getElementById('error-overlay');
+        const errorOutput = document.getElementById('error-output');
+        const saveStatus = document.getElementById('save-status');
+
+
+        // 1. Persistent State Management
+        const STATE_KEY = 'uniomni_sphynx_state';
+        
+        function loadState() {
+            try {
+                const state = JSON.parse(localStorage.getItem(STATE_KEY));
+                if (state) {
+                    if (state.code) editor.value = state.code;
+                    if (state.protocol) {
+                        themeSelector.value = state.protocol;
+                        document.body.setAttribute('data-theme', state.protocol);
+                    }
+                }
+            } catch (e) { console.error("Memory load failed", e); }
+        }
+
+
+        function saveState() {
+            localStorage.setItem(STATE_KEY, JSON.stringify({
+                code: editor.value,
+                protocol: themeSelector.value
+            }));
+            
+            // Flash save indicator
+            saveStatus.classList.remove('opacity-0');
+            setTimeout(() => saveStatus.classList.add('opacity-0'), 2000);
+        }
+
+
+        // 2. Theme Handling
+        themeSelector.addEventListener('change', (e) => {
+            document.body.setAttribute('data-theme', e.target.value);
+            saveState();
+        });
+
+
+        // 3. React/Babel Compilation Engine
+        function compileAndRender() {
+            saveState();
+            errorOverlay.classList.add('hidden');
+            
+            let code = editor.value;
+            if (!code.trim()) {
+                rootNode.innerHTML = `<div class="h-full w-full flex items-center justify-center text-gray-600 font-mono text-sm tracking-widest">AWAITING_PAYLOAD_INJECTION</div>`;
+                return;
+            }
+
+
+            try {
+                // Pre-processor: Strip out generic ES6 imports that break browser execution
+                // Specifically targeting lucide-react or similar generic imports used in previous prompts
+                code = code.replace(/import\s+.*?from\s+['"].*?['"];?/g, '');
+                
+                // Pre-processor: Force default exports to standard functional components
+                code = code.replace(/export\s+default\s+function/g, 'function');
+                code = code.replace(/export\s+const/g, 'const');
+
+
+                // Babel Transpilation (JSX -> JS)
+                const transformed = Babel.transform(code, { presets: ['react'] }).code;
+
+
+                // Create Execution Scope Wrapper
+                // Injects React hooks and creates a safe sandbox for the component to mount
+                const scopeWrapper = `
+                    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+                    
+                    // Stub for Lucide icons to prevent crash if Data-Viewer is pasted
+                    const IconStub = (props) => React.createElement('svg', { ...props, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2', width: '24', height: '24' }, React.createElement('circle', { cx: '12', cy: '12', r: '10' }));
+                    const Terminal = IconStub; const Database = IconStub; const Clock = IconStub; 
+                    const Activity = IconStub; const Cpu = IconStub; const ShieldAlert = IconStub; const Code2 = IconStub;
+
+
+                    try {
+                        ${transformed}
+                        
+                        // Attempt to find the primary component to render (usually App)
+                        const RootComponent = typeof App !== 'undefined' ? App : null;
+                        
+                        if (RootComponent) {
+                            const root = ReactDOM.createRoot(document.getElementById('root'));
+                            root.render(React.createElement(RootComponent));
+                        } else {
+                            throw new Error("Could not find an 'App' component to mount.");
+                        }
+                    } catch(executionError) {
+                        window.showError(executionError.message);
+                    }
+                `;
+
+
+                // Execute the transpiled code
+                // Clean the root node before rendering
+                rootNode.innerHTML = ''; 
+                eval(scopeWrapper);
+
+
+            } catch (err) {
+                // Babel Parsing Errors
+                window.showError(err.message);
+            }
+        }
+
+
+        window.showError = function(msg) {
+            errorOutput.innerText = msg;
+            errorOverlay.classList.remove('hidden');
+            errorOverlay.classList.add('flex');
+        };
+
+
+        // 4. Event Listeners
+        compileBtn.addEventListener('click', compileAndRender);
+
+
+        // Auto-compile on Cmd+S / Ctrl+S
+        editor.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                compileAndRender();
+            }
+        });
+
+
+        // Drag and Drop support for importing code
+        window.addEventListener('dragover', e => e.preventDefault());
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.jsx') || file.name.endsWith('.js') || file.name.endsWith('.txt'))) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    editor.value = e.target.result;
+                    compileAndRender();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+
+        // 5. Initialization
+        loadState();
+        if(editor.value) compileAndRender();
+
+
+    </script>
+</body>
+</html>
