@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/entity.schema.json",
+  "title": "Nexus Entity",
+  "type": "object",
+  "required": ["id", "display_name", "role"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^entity:"},
+    "display_name": {"type": "string", "minLength": 1},
+    "role": {"type": "string", "minLength": 1},
+    "public_contact_ref": {"type": ["string", "null"]},
+    "primary_runtime_ref": {"type": ["string", "null"]},
+    "status": {"type": "string"}
+  },
+  "additionalProperties": true
+}
