@@ -1,0 +1,16 @@
+name: Cryptic Communications Validate
+on:
+  pull_request:
+  push:
+    branches: ["staging/cryptic-communications-*"]
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - run: node --check VOID/stars/cryptic-communications-v0.1/bridge/server.mjs
+      - run: node --check VOID/stars/cryptic-communications-v0.1/site/cryptic-bridge-client.js
+      - run: node -e 'const a=require("./VOID/stars/cryptic-communications-v0.1/atoms.json"); const x=require("./VOID/stars/cryptic-communications-v0.1/actions.json"); if(!a.atoms.length||!x.actions.length) process.exit(1)'
